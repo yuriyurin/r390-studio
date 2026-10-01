@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>R390 Studio v0.6.6</title>
+<title>R390 Studio v0.6.7</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Lato:wght@400;700&family=Merriweather:wght@400;700&family=Montserrat:wght@400;700&family=Open+Sans:wght@400;700&family=Oswald:wght@400;700&family=Playfair+Display:wght@400;700&family=Roboto:wght@400;700&family=Roboto+Mono:wght@400;700&family=Ubuntu:wght@400;700&display=swap');
 :root{
@@ -330,7 +330,7 @@ hr{border-top-color:#41444b}
 #r390StatusBar .accent{color:#70baff}
 
 
-/* ===== R390 Studio v0.6.6 — sidebar polish ===== */
+/* ===== R390 Studio v0.6.7 — sidebar polish ===== */
 .sidebar{
   padding:10px 10px 14px;
 }
@@ -518,7 +518,7 @@ hr{border-top-color:#41444b}
 }
 
 
-/* ===== R390 Studio v0.6.6 ===== */
+/* ===== R390 Studio v0.6.7 ===== */
 .main{
   grid-template-columns:232px minmax(500px,1fr) 350px;
 }
@@ -556,7 +556,7 @@ hr{border-top-color:#41444b}
 }
 
 
-/* ===== R390 Studio v0.6.6 ===== */
+/* ===== R390 Studio v0.6.7 ===== */
 .props{
   background:#34363b;
   border-left-color:#1d1f22;
@@ -637,7 +637,7 @@ hr{border-top-color:#41444b}
 }
 
 
-/* v0.6.6: clickable support button */
+/* v0.6.7: clickable support button */
 #r390StatusBar{
   pointer-events:auto !important;
 }
@@ -670,7 +670,7 @@ hr{border-top-color:#41444b}
 }
 
 
-/* ===== R390 Studio v0.6.6 ===== */
+/* ===== R390 Studio v0.6.7 ===== */
 .author-block{
   gap:6px;
 }
@@ -722,7 +722,7 @@ hr{border-top-color:#41444b}
 }
 
 
-/* ===== R390 Studio v0.6.6 ===== */
+/* ===== R390 Studio v0.6.7 ===== */
 .outline-controls{
   margin:7px 0 8px;
   padding:7px 8px 5px;
@@ -738,7 +738,7 @@ hr{border-top-color:#41444b}
 }
 
 
-/* ===== R390 Studio v0.6.6 — layer controls ===== */
+/* ===== R390 Studio v0.6.7 — layer controls ===== */
 .props .layer{
   display:grid;
   grid-template-columns:20px 24px 20px minmax(0,1fr) auto 24px 24px;
@@ -818,7 +818,7 @@ hr{border-top-color:#41444b}
 }
 
 
-/* ===== R390 Studio v0.6.6 — PC / Mobile interface ===== */
+/* ===== R390 Studio v0.6.7 — PC / Mobile interface ===== */
 .ui-mode-switch{
   position:fixed;
   left:50%;
@@ -1174,7 +1174,7 @@ body.mobile-ui .ui-mode-mini button{
 }
 
 
-/* ===== R390 Studio v0.6.6 — mobile button alignment ===== */
+/* ===== R390 Studio v0.6.7 — mobile button alignment ===== */
 body.mobile-ui button,
 body.mobile-ui .filebtn{
   display:inline-flex !important;
@@ -1225,7 +1225,7 @@ body.guide-open{
 }
 
 
-/* ===== R390 Studio v0.6.6 — guide footer links ===== */
+/* ===== R390 Studio v0.6.7 — guide footer links ===== */
 .guide-links{
   display:flex;
   align-items:center;
@@ -1259,7 +1259,7 @@ body.mobile-ui .guide-author-label{
 </head>
 <body>
 <div class="top">
-  <div class="brand">R390 Studio <span class="badge">v0.6.6</span></div>
+  <div class="brand">R390 Studio <span class="badge">v0.6.7</span></div>
   <button id="quickStartBtn" class="help-accent">✦ Как начать</button>
   <button id="undoBtn" title="Отменить (Ctrl+Z)" disabled>↶</button>
   <button id="redoBtn" title="Повторить (Ctrl+Shift+Z / Ctrl+Y)" disabled>↷</button>
@@ -1780,6 +1780,14 @@ function refreshProps(){
     h+=numRow('Digit W','digitW',l,8,120)+numRow('Digit H','digitH',l,8,160)+numRow('Gap','gap',l,-30,60);
     h+=numRow('Размер','fontSize',l,8,160);
     h+=colorRow('Цифры','color',l)+outlineControls(l);
+    const blinkOn=!!l.blinkColon && editMode!=='aod';
+    h+=`<div class="row"><label>Мигающие точки</label><input data-k="blinkColon" type="checkbox" ${l.blinkColon?'checked':''} ${editMode==='aod'?'disabled':''}></div>`;
+    h+=`<div class="row"><label>Интервал</label><select data-k="blinkPeriod" ${blinkOn?'':'disabled'}>
+      <option value="500" ${Number(l.blinkPeriod||500)===500?'selected':''}>500 мс</option>
+      <option value="1000" ${Number(l.blinkPeriod||500)===1000?'selected':''}>1000 мс</option>
+    </select></div>`;
+    if(editMode==='aod')h+=`<div class="small">В AOD двоеточие экспортируется статичным — без анимации.</div>`;
+    else h+=`<div class="small">Мигает только двоеточие; цифры времени остаются native sprite-виджетами.</div>`;
   }
   if(l.type==='analog'){
     h+=`<div class="analog-native-note">Native Fit3: type 2 · Hour=1 · Minute=9 · Second=13</div>`;
@@ -1838,7 +1846,7 @@ function refreshProps(){
       if(inp.type==='checkbox')l[k]=inp.checked;
       else if(inp.type==='number')l[k]=Number(inp.value);
       else l[k]=inp.value;
-      if(k==='outlineEnabled'||k==='showSecond')refreshProps();
+      if(k==='outlineEnabled'||k==='showSecond'||k==='blinkColon')refreshProps();
       refreshLayers();estimate();render();scheduleHistory('Свойства слоя');
     };
   });
@@ -1988,15 +1996,15 @@ function drawAnalogHand(c,cx,cy,angle,length,width,color,tail=0){
   c.save();c.translate(cx,cy);c.rotate(angle);
   c.strokeStyle=color;c.lineWidth=Math.max(1,width);c.lineCap='round';
   c.beginPath();c.moveTo(0,Math.max(0,tail));c.lineTo(0,-Math.max(1,length));c.stroke();
-  c.restore();
-}
+  c.restore();}
 function drawAnalogLayer(c,l,t,showSeconds=true){
   const parts=String(t||'11:11').split(':'),hh=Number(parts[0])||0,mm=Number(parts[1])||0,ss=0;
   const p=analogCenter(l);
   const hour=((hh%12)+mm/60)*Math.PI/6;
   const minute=(mm+ss/60)*Math.PI/30;
   const second=ss*Math.PI/30;
-  drawAnalogHand(c,p.x,p.y,hour,l.hourLength||72,l.hourWidth||6,l.hourColor||'#d5d7db',0);  drawAnalogHand(c,p.x,p.y,minute,l.minuteLength||106,l.minuteWidth||4,l.minuteColor||'#d5d7db',0);
+  drawAnalogHand(c,p.x,p.y,hour,l.hourLength||72,l.hourWidth||6,l.hourColor||'#d5d7db',0);
+  drawAnalogHand(c,p.x,p.y,minute,l.minuteLength||106,l.minuteWidth||4,l.minuteColor||'#d5d7db',0);
   if(showSeconds&&l.showSecond!==false)drawAnalogHand(c,p.x,p.y,second,l.secondLength||116,l.secondWidth||2,l.secondColor||'#e25a5f',l.secondTail||18);
   if((l.capRadius||0)>0){c.save();c.fillStyle=l.capColor||'#d5d7db';c.beginPath();c.arc(p.x,p.y,l.capRadius,0,Math.PI*2);c.fill();c.restore()}
 }
@@ -2081,7 +2089,7 @@ function maskCurrentCanvasWithOfficialShape(c){
   return true;
 }
 function drawOfficialShapeOutline(c){
-  // v0.6.6: official Samsung _d.png + uz.png bezel is a DOM overlay.
+  // v0.6.7: official Samsung _d.png + uz.png bezel is a DOM overlay.
 }
 
 async function render(){
@@ -2097,7 +2105,7 @@ async function render(){
       l._ims=l._ims||{};
       if(!l._ims[idx])l._ims[idx]=await loadImg(src);
       ctx.drawImage(l._ims[idx],l.x,l.y,l.w,l.h);
-    } else if(l.type==='time') drawTimeLayer(ctx,l,project.previewTime);
+    } else if(l.type==='time') drawTimeLayer(ctx,l,project.previewTime,editMode!=='aod'&&playing);
     else if(l.type==='analog') drawAnalogLayer(ctx,l,project.previewTime,editMode!=='aod');
     else if(l.type==='text') drawTextLayer(ctx,l);
     else if(l.type==='date') drawDateLayer(ctx,l);
@@ -2126,18 +2134,21 @@ function timeLayout(l){
   const m1=m10+dw+g+1;
   return {h10,h1,colon,m10,m1};
 }
-function drawTimeLayer(c,l,t){
+function drawTimeLayer(c,l,t,animateColon=false){
   const vals=timeParts(t), dw=l.digitW, dh=l.digitH, q=timeLayout(l),fg=l.color||'#d5d7db';
   c.save();c.textAlign='center';c.textBaseline='middle';c.font=`700 ${l.fontSize}px ${fontCssFamily(l)}`;
   const xs=[q.h10,q.h1,q.m10,q.m1];
   for(let i=0;i<4;i++)drawOutlinedText(c,l,String(vals[i]),xs[i]+dw/2,l.y+dh/2,fg);
-  const cx=q.colon+dw/2,r=Math.max(2,dw*.055);
-  if(l.outlineEnabled){
-    const or=r+outlinePx(l);
-    c.fillStyle=l.outlineColor||'#202226';
-    c.beginPath();c.arc(cx,l.y+dh*.38,or,0,Math.PI*2);c.arc(cx,l.y+dh*.67,or,0,Math.PI*2);c.fill();
+  const colonVisible=!(animateColon&&l.blinkColon&&l._colonOn===false);
+  if(colonVisible){
+    const cx=q.colon+dw/2,r=Math.max(2,dw*.055);
+    if(l.outlineEnabled){
+      const or=r+outlinePx(l);
+      c.fillStyle=l.outlineColor||'#202226';
+      c.beginPath();c.arc(cx,l.y+dh*.38,or,0,Math.PI*2);c.arc(cx,l.y+dh*.67,or,0,Math.PI*2);c.fill();
+    }
+    c.fillStyle=fg;c.beginPath();c.arc(cx,l.y+dh*.38,r,0,Math.PI*2);c.arc(cx,l.y+dh*.67,r,0,Math.PI*2);c.fill();
   }
-  c.fillStyle=fg;c.beginPath();c.arc(cx,l.y+dh*.38,r,0,Math.PI*2);c.arc(cx,l.y+dh*.67,r,0,Math.PI*2);c.fill();
   c.restore();
 }
 function refreshTimeline(){
@@ -2154,7 +2165,7 @@ function estimate(){
   for(const l of [...(project.layers||[]),...(project.aodLayers||[])]){
     if(l.type==='image')px+=l.w*l.h*3;
     else if(l.type==='animation')px+=l.w*l.h*3*l.frames.length;
-    else if(l.type==='time')px+=(l.digitW*l.digitH*3*11);
+    else if(l.type==='time')px+=(l.digitW*l.digitH*3*(11+(l.blinkColon?1:0)));
     else if(l.type==='analog')px+=18000;
     else if(l.type==='text')px+=l.w*l.h*3;
     else if(l.type==='metric')px+=l.w*Math.max(12,Math.round((l.labelSize||11)*1.6))*3;
@@ -2190,7 +2201,7 @@ function schedulePreviewRefresh(){
 async function updatePreviews(){
   if(!project)return;
   try{
-    const a=await renderLayersToCanvas(project.layers||[],project.bgColor||'#000000',true);
+    const a=await renderLayersToCanvas(project.layers||[],project.bgColor||'#000000',!playing);
     const b=await renderLayersToCanvas(project.aodLayers||[],project.aodBgColor||'#000000',true);
     const ma=$('#mainPreview').getContext('2d'),mb=$('#aodPreview').getContext('2d');
     ma.clearRect(0,0,128,201);ma.drawImage(a,0,0,128,201);
@@ -2231,7 +2242,7 @@ $('#addAnim').onchange=async e=>{
       name=fs[0].name.replace(/\.gif$/i,'')+` GIF ${decoded.length}f`;
       setStatus(`GIF: ${decoded.length} кадров, исходная скорость ≈ ${fps} FPS — загружаю…`);
     }else{
-      if(fs.length>118)throw new Error('Максимум 118 кадров в v0.6.6');
+      if(fs.length>118)throw new Error('Максимум 118 кадров в v0.6.7');
       setStatus(`Загрузка ${fs.length} кадров…`);
       for(const f of fs)frames.push(await readDataURL(f));
       name='Animation '+fs.length+'f';
@@ -2249,7 +2260,7 @@ $('#addAnim').onchange=async e=>{
     console.error(err);e.target.value='';setStatus('Ошибка GIF: '+err.message,'warn');alert('Не удалось импортировать анимацию: '+err.message);
   }
 };
-$('#addTime').onclick=()=>addLayer({id:uid(),type:'time',name:'HH:MM',x:6,y:70,w:234,h:72,visible:true,digitW:60,digitH:72,gap:-7,fontSize:68,color:'#d5d7db',font:'Inter',outlineEnabled:false,outlineColor:'#202226',outlineWidth:1});
+$('#addTime').onclick=()=>addLayer({id:uid(),type:'time',name:'HH:MM',x:6,y:70,w:234,h:72,visible:true,digitW:60,digitH:72,gap:-7,fontSize:68,color:'#d5d7db',font:'Inter',outlineEnabled:false,outlineColor:'#202226',outlineWidth:1,blinkColon:false,blinkPeriod:500});
 $('#addAnalog').onclick=()=>addLayer({
   id:uid(),type:'analog',name:'Стрелки',x:28,y:101,w:200,h:200,visible:true,
   hourLength:72,hourWidth:6,hourColor:'#d5d7db',
@@ -2267,7 +2278,11 @@ $('#addBattery').onclick=()=>addLayer({id:uid(),type:'battery',name:'Батар�
 
 $('#delete').onclick=()=>{if(!selected)return;setActiveLayers(activeLayers().filter(x=>x.id!==selected));selected=null;refreshAll();pushHistory('Удалён слой')};
 $('#center').onclick=()=>{const l=getSel();if(!l)return;l.x=Math.round((256-l.w)/2);l.y=Math.round((402-l.h)/2);refreshAll();pushHistory('Центрирование')};
-$('#play').onclick=()=>{playing=!playing;updatePlayButton();render()};
+$('#play').onclick=()=>{
+  playing=!playing;
+  if(!playing)for(const l of project.layers||[])if(l.type==='time'){l._colonOn=true;l._colonAcc=0}
+  updatePlayButton();render()
+};
 $('#newBtn').onclick=()=>{if(confirm('Создать новый проект?'))newProject()};
 
 const faceIdInput=$('#faceId');
@@ -2399,6 +2414,15 @@ function tick(t){
             l._frame=((l._frame||0)+1)%l.frames.length;
           }
         }
+      }else if(l.type==='time'&&l.blinkColon){
+        hasAnim=true;
+        if(l._colonOn==null)l._colonOn=true;
+        l._colonAcc=(l._colonAcc||0)+dt;
+        const step=Math.max(100,Number(l.blinkPeriod)||500);
+        while(l._colonAcc>=step){
+          l._colonAcc-=step;
+          l._colonOn=!l._colonOn;
+        }
       }
     }
     if(hasAnim){render();if(t-lastTimelineUpdate>120){lastTimelineUpdate=t;refreshTimeline()}}
@@ -2417,6 +2441,11 @@ async function hydrateProject(p){
   await registerCustomFonts(p);
   const all=[...p.layers,...p.aodLayers];
   for(const l of all){
+    if(l.type==='time'){
+      if(l.blinkColon==null)l.blinkColon=false;
+      l.blinkPeriod=Number(l.blinkPeriod)||500;
+      l._colonOn=true;l._colonAcc=0;
+    }
     if(l.type==='analog'){
       l.hourLength=l.hourLength||72;l.hourWidth=l.hourWidth||6;l.hourColor=l.hourColor||'#d5d7db';
       l.minuteLength=l.minuteLength||106;l.minuteWidth=l.minuteWidth||4;l.minuteColor=l.minuteColor||'#d5d7db';
@@ -2625,7 +2654,7 @@ async function renderLayersToCanvas(layers,bgColor,animFirst=true,physicalPrevie
   for(const l of layers||[]){if(l.visible===false)continue;
     if(l.type==='image'&&l.src){const im=await loadImg(l.src);x.drawImage(im,l.x,l.y,l.w,l.h)}
     else if(l.type==='animation'&&l.frames&&l.frames.length){const im=await loadImg(l.frames[animFirst?0:(l._frame||0)]);x.drawImage(im,l.x,l.y,l.w,l.h)}
-    else if(l.type==='time')drawTimeLayer(x,l,project.previewTime)
+    else if(l.type==='time')drawTimeLayer(x,l,project.previewTime,!animFirst&&layers===project.layers&&playing)
     else if(l.type==='analog')drawAnalogLayer(x,l,project.previewTime,layers!==project.aodLayers)
     else if(l.type==='text')drawTextLayer(x,l)
     else if(l.type==='date')drawDateLayer(x,l)
@@ -2688,7 +2717,13 @@ async function buildStyleForLayers(layers,bgColor,{allowAnimation=true}={}){
         q.beginPath();q.arc(cx,pad+l.digitH*.38,or,0,Math.PI*2);q.arc(cx,pad+l.digitH*.67,or,0,Math.PI*2);q.fill();
       }
       q.fillStyle=fg;q.beginPath();q.arc(cx,pad+l.digitH*.38,rr,0,Math.PI*2);q.arc(cx,pad+l.digitH*.67,rr,0,Math.PI*2);q.fill();
-      const colon=rasters.length;rasters.push(rasterFromCanvas(cc,true));specs.push({kind:'time',l,digits:inds,colon,pad});
+      const colon=rasters.length;rasters.push(rasterFromCanvas(cc,true));
+      let colonOff=null;
+      if(allowAnimation&&l.blinkColon){
+        const off=document.createElement('canvas');off.width=cc.width;off.height=cc.height;
+        colonOff=rasters.length;rasters.push(rasterFromCanvas(off,true));
+      }
+      specs.push({kind:'time',l,digits:inds,colon,colonOff,pad,blinkPeriod:Math.max(100,Number(l.blinkPeriod)||500)});
     }else if(l.type==='text'){
       await waitFont(fontFamily(l),l.fontSize||20,l.bold?700:400);
       const can=textRasterCanvas(l,l.text||'Текст',l.color||'#d5d7db',l.fontSize||20,l.bold,l.align||'center'),ri=rasters.length;
@@ -2736,7 +2771,11 @@ async function buildStyleForLayers(layers,bgColor,{allowAnimation=true}={}){
         ws.push(widgetSprite(3,q.h1-p,l.y-p,sp.digits.map(i=>rel[i]),ws.length));
         ws.push(widgetSprite(10,q.m10-p,l.y-p,sp.digits.slice(0,6).map(i=>rel[i]),ws.length));
         ws.push(widgetSprite(11,q.m1-p,l.y-p,sp.digits.map(i=>rel[i]),ws.length));
-        ws.push(widgetType1(q.colon-p,l.y-p,rel[sp.colon],ws.length));
+        if(sp.colonOff!=null){
+          ws.push(widgetTimed(q.colon-p,l.y-p,[rel[sp.colon],rel[sp.colonOff]],sp.blinkPeriod,true,ws.length));
+        }else{
+          ws.push(widgetType1(q.colon-p,l.y-p,rel[sp.colon],ws.length));
+        }
       }
     }return ws
   };
