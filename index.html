@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>R390 Studio v0.6.5</title>
+<title>R390 Studio v0.6.6</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Lato:wght@400;700&family=Merriweather:wght@400;700&family=Montserrat:wght@400;700&family=Open+Sans:wght@400;700&family=Oswald:wght@400;700&family=Playfair+Display:wght@400;700&family=Roboto:wght@400;700&family=Roboto+Mono:wght@400;700&family=Ubuntu:wght@400;700&display=swap');
 :root{
@@ -330,7 +330,7 @@ hr{border-top-color:#41444b}
 #r390StatusBar .accent{color:#70baff}
 
 
-/* ===== R390 Studio v0.6.5 — sidebar polish ===== */
+/* ===== R390 Studio v0.6.6 — sidebar polish ===== */
 .sidebar{
   padding:10px 10px 14px;
 }
@@ -518,7 +518,7 @@ hr{border-top-color:#41444b}
 }
 
 
-/* ===== R390 Studio v0.6.5 ===== */
+/* ===== R390 Studio v0.6.6 ===== */
 .main{
   grid-template-columns:232px minmax(500px,1fr) 350px;
 }
@@ -556,7 +556,7 @@ hr{border-top-color:#41444b}
 }
 
 
-/* ===== R390 Studio v0.6.5 ===== */
+/* ===== R390 Studio v0.6.6 ===== */
 .props{
   background:#34363b;
   border-left-color:#1d1f22;
@@ -637,7 +637,7 @@ hr{border-top-color:#41444b}
 }
 
 
-/* v0.6.5: clickable support button */
+/* v0.6.6: clickable support button */
 #r390StatusBar{
   pointer-events:auto !important;
 }
@@ -670,7 +670,7 @@ hr{border-top-color:#41444b}
 }
 
 
-/* ===== R390 Studio v0.6.5 ===== */
+/* ===== R390 Studio v0.6.6 ===== */
 .author-block{
   gap:6px;
 }
@@ -722,7 +722,7 @@ hr{border-top-color:#41444b}
 }
 
 
-/* ===== R390 Studio v0.6.5 ===== */
+/* ===== R390 Studio v0.6.6 ===== */
 .outline-controls{
   margin:7px 0 8px;
   padding:7px 8px 5px;
@@ -738,7 +738,7 @@ hr{border-top-color:#41444b}
 }
 
 
-/* ===== R390 Studio v0.6.5 — layer controls ===== */
+/* ===== R390 Studio v0.6.6 — layer controls ===== */
 .props .layer{
   display:grid;
   grid-template-columns:20px 24px 20px minmax(0,1fr) auto 24px 24px;
@@ -818,7 +818,7 @@ hr{border-top-color:#41444b}
 }
 
 
-/* ===== R390 Studio v0.6.5 — PC / Mobile interface ===== */
+/* ===== R390 Studio v0.6.6 — PC / Mobile interface ===== */
 .ui-mode-switch{
   position:fixed;
   left:50%;
@@ -1174,7 +1174,7 @@ body.mobile-ui .ui-mode-mini button{
 }
 
 
-/* ===== R390 Studio v0.6.5 — mobile button alignment ===== */
+/* ===== R390 Studio v0.6.6 — mobile button alignment ===== */
 body.mobile-ui button,
 body.mobile-ui .filebtn{
   display:inline-flex !important;
@@ -1225,7 +1225,7 @@ body.guide-open{
 }
 
 
-/* ===== R390 Studio v0.6.5 — guide footer links ===== */
+/* ===== R390 Studio v0.6.6 — guide footer links ===== */
 .guide-links{
   display:flex;
   align-items:center;
@@ -1259,7 +1259,7 @@ body.mobile-ui .guide-author-label{
 </head>
 <body>
 <div class="top">
-  <div class="brand">R390 Studio <span class="badge">v0.6.5</span></div>
+  <div class="brand">R390 Studio <span class="badge">v0.6.6</span></div>
   <button id="quickStartBtn" class="help-accent">✦ Как начать</button>
   <button id="undoBtn" title="Отменить (Ctrl+Z)" disabled>↶</button>
   <button id="redoBtn" title="Повторить (Ctrl+Shift+Z / Ctrl+Y)" disabled>↷</button>
@@ -2081,7 +2081,7 @@ function maskCurrentCanvasWithOfficialShape(c){
   return true;
 }
 function drawOfficialShapeOutline(c){
-  // v0.6.5: official Samsung _d.png + uz.png bezel is a DOM overlay.
+  // v0.6.6: official Samsung _d.png + uz.png bezel is a DOM overlay.
 }
 
 async function render(){
@@ -2231,7 +2231,7 @@ $('#addAnim').onchange=async e=>{
       name=fs[0].name.replace(/\.gif$/i,'')+` GIF ${decoded.length}f`;
       setStatus(`GIF: ${decoded.length} кадров, исходная скорость ≈ ${fps} FPS — загружаю…`);
     }else{
-      if(fs.length>118)throw new Error('Максимум 118 кадров в v0.6.5');
+      if(fs.length>118)throw new Error('Максимум 118 кадров в v0.6.6');
       setStatus(`Загрузка ${fs.length} кадров…`);
       for(const f of fs)frames.push(await readDataURL(f));
       name='Animation '+fs.length+'f';
@@ -2569,9 +2569,20 @@ function styleBin(widgets,rasters){
   const ws=widgets(rel);ws.forEach((w,i)=>{const rs=(w[12]|w[13]<<8);u32le(w,12,(i<<16)|rs)});
   const wb=concat(ws),ib=concat(rasters),h=new Uint8Array(24);u32le(h,0,0x12345678);u32le(h,4,ws.length);u32le(h,8,wb.length);u32le(h,12,ib.length);u32le(h,16,0x200);u32le(h,20,24+wb.length);return concat([h,wb,ib])
 }
-function makeSetting(faceId){
-  const a=new Uint8Array(256);a.set(ascii('LQ_WF'),0);u32le(a,12,0x12345678);const id=String(faceId).padStart(5,'0');a.set(ascii(id),16);
-  const root=`SM-R390_${id}_256x402`,slot=new Uint8Array(64);slot.set(ascii(root),1);a.set(slot,0x38);a.set(slot,0x78);return a
+function makeSetting(faceId,variantCount=1){
+  const a=new Uint8Array(256);
+  a.set(ascii('LQ_WF'),0);
+  // Matches Samsung stock setting.bin layout.
+  // 0x04 = 0x46, 0x0c = format magic, 0x30 = family/config id,
+  // 0x34 low16 = number of style variants, high16 = 0xffff.
+  u32le(a,4,0x46);
+  u32le(a,12,0x12345678);
+  const id=String(faceId).padStart(5,'0');a.set(ascii(id),16);
+  u32le(a,0x30,0x00009c42);
+  const variants=Math.max(1,Math.min(0xffff,Math.round(Number(variantCount)||1)));
+  u32le(a,0x34,(0xffff0000|variants)>>>0);
+  const root=`SM-R390_${id}_256x402`,slot=new Uint8Array(64);slot.set(ascii(root),1);a.set(slot,0x38);a.set(slot,0x78);
+  return a
 }
 function oppoContainer(faceId,files){
   const id=String(faceId).padStart(5,'0'),root=`SM-R390_${id}_256x402`,names=Object.keys(files),dirSize=names.length*74,first=32+dirSize;
@@ -2579,8 +2590,35 @@ function oppoContainer(faceId,files){
   for(const n of names){const p=ascii(`./${root}/${n}`);if(p.length>63)throw new Error('Слишком длинный путь '+n);dir.set(p,d);u32le(dir,d+64,payloadOff);u32le(dir,d+68,files[n].length);u16le(dir,d+72,crc16(files[n]));payloads.push(files[n]);payloadOff+=files[n].length;d+=74}
   const body=concat([dir,...payloads]),h=new Uint8Array(32);h.set(ascii('oppo'),0);u32le(h,4,4);u32le(h,8,body.length);u32le(h,12,names.length);u16le(h,16,crc16(body));return concat([h,body])
 }
+function readU32le(b,o){return ((b[o]|(b[o+1]<<8)|(b[o+2]<<16)|(b[o+3]<<24))>>>0)}
+function parseOppoFiles(b){
+  if(String.fromCharCode(...b.slice(0,4))!=='oppo')throw new Error('OPPO magic');
+  const n=readU32le(b,12),files=[];
+  for(let i=0;i<n;i++){
+    const d=32+i*74;
+    let end=d;while(end<d+64&&b[end])end++;
+    const name=new TextDecoder().decode(b.slice(d,end));
+    const off=readU32le(b,d+64),size=readU32le(b,d+68);
+    files.push({name,off,size,data:b.slice(off,off+size)});
+  }
+  return files
+}
+function validateVariantCount(files){
+  const setting=files.find(f=>f.name.endsWith('/setting.bin'));
+  if(!setting||setting.data.length<0x38)throw new Error('setting.bin отсутствует или повреждён');
+  const declared=readU32le(setting.data,0x34)&0xffff;
+  const styles=files.filter(f=>/\/style\d+\.bin$/.test(f.name));
+  if(declared<1)throw new Error('setting.bin объявляет 0 вариантов циферблата');
+  if(declared!==styles.length)throw new Error(`Количество вариантов не совпадает: setting.bin=${declared}, style*.bin=${styles.length}`);
+  if(!files.some(f=>f.name.endsWith('/style0.bin')))throw new Error('style0.bin отсутствует');
+  return declared
+}
 function validateBin(b){
-  if(String.fromCharCode(...b.slice(0,4))!=='oppo')throw new Error('OPPO magic');const size=b[8]|b[9]<<8|b[10]<<16|b[11]<<24;if(size!==b.length-32)throw new Error('payload size');if(crc16(b,32)!==(b[16]|b[17]<<8))throw new Error('global CRC');return true
+  if(String.fromCharCode(...b.slice(0,4))!=='oppo')throw new Error('OPPO magic');
+  const size=readU32le(b,8);if(size!==b.length-32)throw new Error('payload size');
+  if(crc16(b,32)!==(b[16]|b[17]<<8))throw new Error('global CRC');
+  validateVariantCount(parseOppoFiles(b));
+  return true
 }
 async function renderLayersToCanvas(layers,bgColor,animFirst=true,physicalPreview=true){
   const c=document.createElement('canvas');c.width=256;c.height=402;const x=c.getContext('2d');x.fillStyle=bgColor||'#000000';x.fillRect(0,0,256,402);
@@ -2714,7 +2752,7 @@ async function buildBin(){
   const preview=rasterFromCanvas(pc,false);
   const files={};
   for(const n of Object.keys(SHELL))if(n!=='aod.bin')files[n]=b64bytes(SHELL[n]);
-  files['aod.bin']=aod;files['preview.bin']=preview;files['setting.bin']=makeSetting(project.faceId);files['style0.bin']=style;
+  files['aod.bin']=aod;files['preview.bin']=preview;files['style0.bin']=style;files['setting.bin']=makeSetting(project.faceId,1);
   const bin=oppoContainer(project.faceId,files);validateBin(bin);
   if(bin.length>4*1024*1024)throw new Error(`BIN ${(bin.length/1048576).toFixed(2)} MiB > 4 MiB`);
   return bin
