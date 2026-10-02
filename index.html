@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>R390 Studio v0.6.10</title>
+<title>R390 Studio v0.6.11</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Lato:wght@400;700&family=Merriweather:wght@400;700&family=Montserrat:wght@400;700&family=Open+Sans:wght@400;700&family=Oswald:wght@400;700&family=Playfair+Display:wght@400;700&family=Roboto:wght@400;700&family=Roboto+Mono:wght@400;700&family=Ubuntu:wght@400;700&display=swap');
 :root{
@@ -1288,7 +1288,7 @@ body.mobile-ui .preview-card .fit3-preview-shell .fit3-case{width:100%;height:10
   <div class="language-switch" role="group" aria-label="Язык интерфейса">
     <button type="button" data-language="ru" aria-pressed="true">RU</button><button type="button" data-language="en" aria-pressed="false">EU</button>
   </div>
-  <div class="brand">R390 Studio <span class="badge">v0.6.10</span></div>
+  <div class="brand">R390 Studio <span class="badge">v0.6.11</span></div>
   <button id="quickStartBtn" class="help-accent">✦ Как начать</button>
   <button id="undoBtn" title="Отменить (Ctrl+Z)" disabled>↶</button>
   <button id="redoBtn" title="Повторить (Ctrl+Shift+Z / Ctrl+Y)" disabled>↷</button>
@@ -1726,6 +1726,7 @@ function duplicateLayerById(id){
     copy._acc=0;
   }
   if(src.type==='image')copy._im=null;
+  for(const key of ['textureSrc','textureEmptySrc'])if(src['_'+key])copy['_'+key]=src['_'+key];
   const pos=layers.findIndex(x=>x.id===id);
   layers.splice(Math.max(0,pos+1),0,copy);
   selected=copy.id;
@@ -1866,6 +1867,8 @@ function refreshProps(){
     h+=`<div class="small">Дата остаётся native-виджетом Fit3 и использует системный шрифт часов. Кастомные шрифты применяются к времени и статическому тексту.</div>`;
   }
   if(l.type==='metric'){
+    h+=textureControls(l);
+    if(l.textureSrc)h+=numRow('Высота иконки','textureHeight',l,8,160);
     h+=textRow('Подпись','label',l)+textRow('Пример','sample',l);
     h+=numRow('Цифры px','fontSize',l,8,72)+numRow('Подпись px','labelSize',l,6,40);
     h+=colorRow('Цифры','valueColor',l)+colorRow('Подпись','labelColor',l)+outlineControls(l);
@@ -1876,14 +1879,19 @@ function refreshProps(){
       <option value="icon" ${l.style==='icon'?'selected':''}>Иконка</option>
       <option value="bar" ${l.style==='bar'?'selected':''}>Полоса</option>
       <option value="ring" ${l.style==='ring'?'selected':''}>Кольцо</option>
+      <option value="custom" ${l.style==='custom'?'selected':''}>Свой PNG</option>
       <option value="percent" ${l.style==='percent'?'selected':''}>Только %</option>
       <option value="iconPercent" ${l.style==='iconPercent'?'selected':''}>Иконка + %</option>
     </select></div>`;
     h+=numRow('Пример %','sample',l,0,100);
     h+=numRow('Размер %','fontSize',l,8,72);
-    h+=colorRow('Цвет','color',l);+outlineControls(l)
-    if(l.style!=='percent'&&l.style!=='iconPercent'){
-      h+=`<div class="row"><label>Проценты</label><input data-k="showPercent" type="checkbox" ${l.showPercent?'checked':''}></div>`;
+    h+=colorRow('Цвет','color',l)+outlineControls(l);
+    if(l.style!=='percent'){
+      h+=`<div class="row"><label>Показать проценты</label><input data-k="showPercent" type="checkbox" ${(l.showPercent??l.style==='iconPercent')?'checked':''}></div>`;
+    }
+    if(l.style==='custom'){
+      h+=textureControls(l);
+      h+=`<div class="row"><label>Заполнение</label><select data-k="textureDirection"><option value="up" ${l.textureDirection!=='right'?'selected':''}>Снизу вверх</option><option value="right" ${l.textureDirection==='right'?'selected':''}>Слева направо</option></select></div>`;
     }
     h+=`<div class="small">На часах source 37 используется дважды: sprite для уровня и native type 5 для точного текущего процента.</div>`;
   }
@@ -1894,10 +1902,43 @@ function refreshProps(){
       if(inp.type==='checkbox')l[k]=inp.checked;
       else if(inp.type==='number')l[k]=Number(inp.value);
       else l[k]=inp.value;
-      if(k==='outlineEnabled'||k==='showSecond'||k==='blinkColon')refreshProps();
+      if(k==='outlineEnabled'||k==='showSecond'||k==='blinkColon'||k==='style')refreshProps();
       refreshLayers();estimate();render();scheduleHistory('Свойства слоя');
     };
   });
+  ui.prop.querySelectorAll('[data-texture]').forEach(inp=>inp.onchange=async()=>{
+    const file=inp.files[0];if(!file)return;
+    try{
+      if(file.type!=='image/png'||file.size>4*1048576)throw new Error('PNG: максимум 4 MiB');
+      const src=await new Promise((ok,fail)=>{const r=new FileReader();r.onload=()=>ok(r.result);r.onerror=fail;r.readAsDataURL(file)});
+      const im=await loadImg(src);
+      if(im.width>4096||im.height>4096)throw new Error('PNG: максимум 4096 × 4096');
+      const key=inp.dataset.texture;l[key]=src;l['_'+key]=im;
+      if(l.type==='metric'&&!l.textureHeight)l.textureHeight=24;
+      refreshAll();scheduleHistory('PNG виджета');
+    }catch(e){localizedAlert(e.message)}
+  });
+  ui.prop.querySelectorAll('[data-remove-texture]').forEach(btn=>btn.onclick=()=>{
+    const key=btn.dataset.removeTexture;delete l[key];delete l['_'+key];refreshAll();scheduleHistory('PNG виджета');
+  });
+}
+function textureControls(l){
+  const keys=l.type==='battery'?[['textureEmptySrc','Пустой PNG'],['textureSrc','Полный PNG']]:[['textureSrc','Иконка PNG']];
+  return keys.map(([key,label])=>`<div class="row"><label>${label}</label><label class="filebtn">${l[key]?'Заменить PNG':'Загрузить PNG'}<input type="file" accept="image/png" data-texture="${key}" hidden></label>${l[key]?`<button type="button" data-remove-texture="${key}" title="Удалить PNG" aria-label="Удалить PNG">×</button>`:''}</div>`).join('');
+}
+function metricHeaderHeight(l){return l.textureSrc?Math.min(Math.max(1,l.h-12),Math.max(8,Number(l.textureHeight)||24)):Math.max(12,Math.round((l.labelSize||11)*1.6))}
+function drawTexture(c,im,box){
+  if(!im)return;
+  const scale=Math.min(box.w/im.width,box.h/im.height),w=im.width*scale,h=im.height*scale;
+  c.drawImage(im,box.x+(box.w-w)/2,box.y+(box.h-h)/2,w,h);
+}
+function drawBatteryTexture(c,l,box,percent){
+  c.save();drawTexture(c,l._textureEmptySrc,box);
+  const p=clamp(percent,0,100)/100;
+  c.beginPath();
+  if(l.textureDirection==='right')c.rect(box.x,box.y,box.w*p,box.h);
+  else c.rect(box.x,box.y+box.h*(1-p),box.w,box.h*p);
+  c.clip();drawTexture(c,l._textureSrc,box);c.restore();
 }
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 
@@ -2072,20 +2113,21 @@ function drawDateLayer(c,l){
   drawOutlinedText(c,l,text,x,y,l.color||'#d5d7db',l.w);c.restore();
 }
 function drawMetricLayer(c,l){
-  const labelH=Math.max(10,Math.round((l.labelSize||11)*1.5));
+  const labelH=metricHeaderHeight(l);
   c.save();c.textAlign='center';c.textBaseline='middle';
   c.font=`600 ${l.labelSize||11}px Arial,sans-serif`;
   const lx=l.x+l.w/2,ly=l.y+labelH/2,label=l.label||'';
-  drawOutlinedText(c,l,label,lx,ly,l.labelColor||'#aeb2ba',l.w);
+  if(l.textureSrc)drawTexture(c,l._textureSrc,{x:l.x,y:l.y,w:l.w,h:labelH});
+  else drawOutlinedText(c,l,label,lx,ly,l.labelColor||'#aeb2ba',l.w);
   c.font=`700 ${l.fontSize||26}px Arial,sans-serif`;
   const val=String(l.sample??'0'),vy=l.y+labelH+(l.h-labelH)/2;
   drawOutlinedText(c,l,val,lx,vy,l.valueColor||'#d5d7db',l.w);
   c.restore();
 }
 function batteryParts(l){
-  const style=l.style||'icon',show=(style==='percent'||style==='iconPercent'||l.showPercent);
+  const style=l.style||'icon',show=(style==='percent'||(l.showPercent??style==='iconPercent'));
   if(style==='percent')return {icon:null,value:{x:l.x,y:l.y,w:Math.max(12,l.w-12),h:l.h},pct:{x:l.x+l.w-12,y:l.y,w:12,h:l.h}};
-  if(style==='iconPercent'||show){
+  if(show){
     const iw=Math.max(12,Math.round(l.w*.48));
     return {icon:{x:l.x,y:l.y,w:iw,h:l.h},value:{x:l.x+iw,y:l.y,w:Math.max(12,l.w-iw-10),h:l.h},pct:{x:l.x+l.w-10,y:l.y,w:10,h:l.h}};
   }
@@ -2113,7 +2155,10 @@ function drawBatteryShape(c,box,percent,color,style){
 }
 function drawBatteryLayer(c,l,percent=l.sample??70){
   const style=l.style||'icon',parts=batteryParts(l),col=l.color||'#d5d7db';
-  if(parts.icon)drawBatteryShape(c,parts.icon,percent,col,style==='iconPercent'?'icon':style);
+  if(parts.icon){
+    if(style==='custom')drawBatteryTexture(c,l,parts.icon,percent);
+    else drawBatteryShape(c,parts.icon,percent,col,style==='iconPercent'?'icon':style);
+  }
   if(parts.value){
     c.save();c.fillStyle=col;c.textBaseline='middle';c.textAlign='center';c.font=`700 ${l.fontSize||18}px Arial,sans-serif`;
     const tx=parts.value.x+parts.value.w/2,ty=parts.value.y+parts.value.h/2,tv=String(Math.round(percent));
@@ -2216,7 +2261,7 @@ function estimate(){
     else if(l.type==='time')px+=(l.digitW*l.digitH*3*(11+(l.blinkColon?1:0)));
     else if(l.type==='analog')px+=18000;
     else if(l.type==='text')px+=l.w*l.h*3;
-    else if(l.type==='metric')px+=l.w*Math.max(12,Math.round((l.labelSize||11)*1.6))*3;
+    else if(l.type==='metric')px+=l.w*metricHeaderHeight(l)*3;
     else if(l.type==='battery')px+=l.w*l.h*3*11;
   }
   px+=420000;ui.estimate.textContent=(px/1048576).toFixed(2)+' MiB';ui.estimate.className=px>4*1048576?'warn':'ok';
@@ -2518,7 +2563,8 @@ async function hydrateProject(p){
       l.outlineWidth=Math.max(1,Math.min(6,Number(l.outlineWidth)||1));
     }
 
-    if(l.type==='battery'){l.style=l.style||'icon';l.fontSize=l.fontSize||18;l.showPercent=!!l.showPercent}
+    if(l.type==='battery'){l.style=l.style||'icon';l.fontSize=l.fontSize||18;if(l.showPercent==null)l.showPercent=l.style==='iconPercent'}
+    for(const key of ['textureSrc','textureEmptySrc'])if(l[key])l['_'+key]=await loadImg(l[key]);
     if(l.type==='time'||l.type==='text')l.font=l.font||'Inter';
     if(l.type==='image' && l.src){
       try{l._im=await loadImg(l.src)}catch(_){}
@@ -2788,8 +2834,9 @@ async function buildStyleForLayers(layers,bgColor,{allowAnimation=true}={}){
       const can=textRasterCanvas(l,l.text||'Текст',l.color||'#d5d7db',l.fontSize||20,l.bold,l.align||'center'),ri=rasters.length;
       rasters.push(rasterFromCanvas(can,true));specs.push({kind:'static',x:l.x,y:l.y,raster:ri});
     }else if(l.type==='metric'){
-      const labelH=Math.max(12,Math.round((l.labelSize||10)*1.6)),labelLayer={w:l.w,h:labelH,font:'Inter',outlineEnabled:l.outlineEnabled,outlineColor:l.outlineColor,outlineWidth:l.outlineWidth};
-      const can=textRasterCanvas(labelLayer,l.label||'',l.labelColor||'#aeb2ba',l.labelSize||10,true,'center'),ri=rasters.length;
+      const labelH=metricHeaderHeight(l),labelLayer={w:l.w,h:labelH,font:'Inter',outlineEnabled:l.outlineEnabled,outlineColor:l.outlineColor,outlineWidth:l.outlineWidth};
+      const can=l.textureSrc?document.createElement('canvas'):textRasterCanvas(labelLayer,l.label||'',l.labelColor||'#aeb2ba',l.labelSize||10,true,'center'),ri=rasters.length;
+      if(l.textureSrc){can.width=l.w;can.height=labelH;drawTexture(can.getContext('2d'),l._textureSrc||await loadImg(l.textureSrc),{x:0,y:0,w:l.w,h:labelH})}
       rasters.push(rasterFromCanvas(can,true));specs.push({kind:'static',x:l.x,y:l.y,raster:ri});
       specs.push({kind:'metric',seq:l.seq,x:l.x,y:l.y+labelH,w:l.w,h:Math.max(12,l.h-labelH),fontSize:l.fontSize||27,color:l.valueColor||'#d5d7db',outlineEnabled:l.outlineEnabled,outlineColor:l.outlineColor,outlineWidth:l.outlineWidth});
     }else if(l.type==='date'){
@@ -2798,7 +2845,16 @@ async function buildStyleForLayers(layers,bgColor,{allowAnimation=true}={}){
       const style=l.style||'icon',parts=batteryParts(l),col=l.color||'#d9ff79';
       if(parts.icon){
         const inds=[],localStyle=(style==='iconPercent'?'icon':style);
-        for(let n=0;n<=10;n++){const can=batteryCanvas(parts.icon.w,parts.icon.h,n*10,col,localStyle);inds.push(rasters.length);rasters.push(rasterFromCanvas(can,true))}
+        if(style==='custom'){
+          if(!l.textureSrc)throw new Error('Загрузите полный PNG батареи');
+          l._textureSrc=l._textureSrc||await loadImg(l.textureSrc);
+          if(l.textureEmptySrc)l._textureEmptySrc=l._textureEmptySrc||await loadImg(l.textureEmptySrc);
+        }
+        for(let n=0;n<=10;n++){
+          const can=batteryCanvas(parts.icon.w,parts.icon.h,n*10,col,localStyle);
+          if(style==='custom'){const q=can.getContext('2d');q.clearRect(0,0,can.width,can.height);drawBatteryTexture(q,l,{x:0,y:0,w:can.width,h:can.height},n*10)}
+          inds.push(rasters.length);rasters.push(rasterFromCanvas(can,true));
+        }
         specs.push({kind:'sprite',seq:37,x:parts.icon.x,y:parts.icon.y,rasters:inds});
       }
       if(parts.value)specs.push({kind:'metric',seq:37,x:parts.value.x,y:parts.value.y,w:parts.value.w,h:parts.value.h,fontSize:l.fontSize||18,color:col,outlineEnabled:l.outlineEnabled,outlineColor:l.outlineColor,outlineWidth:l.outlineWidth});

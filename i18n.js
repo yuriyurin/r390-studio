@@ -1,6 +1,12 @@
 /* Interface translations never modify project data or watch-face text. */
 const R390_I18N = (() => {
   const entries = {
+    'Свой PNG':'Custom PNG', 'Показать проценты':'Show percentage', 'Высота иконки':'Icon height',
+    'Пустой PNG':'Empty PNG', 'Полный PNG':'Full PNG', 'Иконка PNG':'PNG icon',
+    'Заменить PNG':'Replace PNG', 'Загрузить PNG':'Upload PNG', 'Удалить PNG':'Remove PNG',
+    'Заполнение':'Fill direction', 'Снизу вверх':'Bottom to top', 'Слева направо':'Left to right',
+    'PNG: максимум 4 MiB':'PNG: maximum 4 MiB', 'PNG: максимум 4096 × 4096':'PNG: maximum 4096 × 4096',
+    'Загрузите полный PNG батареи':'Upload the full battery PNG',
     'Касания холста':'Canvas touch mode', 'Прокрутка':'Scroll', 'Правка':'Edit',
     'Язык интерфейса':'Interface language', '✦ Как начать':'✦ Quick start',
     'Отменить (Ctrl+Z)':'Undo (Ctrl+Z)', 'Повторить (Ctrl+Shift+Z / Ctrl+Y)':'Redo (Ctrl+Shift+Z / Ctrl+Y)',
