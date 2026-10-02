@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>R390 Studio v0.6.16</title>
+<title>R390 Studio v0.6.17</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Lato:wght@400;700&family=Merriweather:wght@400;700&family=Montserrat:wght@400;700&family=Open+Sans:wght@400;700&family=Oswald:wght@400;700&family=Playfair+Display:wght@400;700&family=Roboto:wght@400;700&family=Roboto+Mono:wght@400;700&family=Ubuntu:wght@400;700&display=swap');
 :root{
@@ -1289,7 +1289,7 @@ body.mobile-ui .preview-card .fit3-preview-shell .fit3-case{width:100%;height:10
   <div class="language-switch" role="group" aria-label="Язык интерфейса">
     <button type="button" data-language="ru" aria-pressed="true">RU</button><button type="button" data-language="en" aria-pressed="false">EU</button>
   </div>
-  <div class="brand">R390 Studio <span class="badge">v0.6.16</span></div>
+  <div class="brand">R390 Studio <span class="badge">v0.6.17</span></div>
   <button id="quickStartBtn" class="help-accent">✦ Как начать</button>
   <button id="undoBtn" title="Отменить (Ctrl+Z)" disabled>↶</button>
   <button id="redoBtn" title="Повторить (Ctrl+Shift+Z / Ctrl+Y)" disabled>↷</button>
@@ -2737,7 +2737,7 @@ function widgetAnalog(seq,x,y,pivotX,pivotY,ptr,gidx){
   return b;
 }
 function widgetSprite(seq,x,y,ptrs,gidx){
-  const b=new Uint8Array(36+4*ptrs.length);u32le(b,0,3);u32le(b,4,seq);u32le(b,12,(gidx<<16)|b.length);u16le(b,24,x&0xffff);u16le(b,26,y&0xffff);u16le(b,28,0);u16le(b,30,20);u32le(b,32,ptrs.length);ptrs.forEach((p,i)=>u32le(b,36+i*4,p));return b
+  const b=new Uint8Array(36+4*ptrs.length);u32le(b,0,3);u32le(b,4,seq);u32le(b,12,(gidx<<16)|b.length);u16le(b,24,x&0xffff);u16le(b,26,y&0xffff);u16le(b,28,seq===37?1:0);u16le(b,30,seq===37?0:20);u32le(b,32,ptrs.length);ptrs.forEach((p,i)=>u32le(b,36+i*4,p));return b
 }
 function widgetTimed(x,y,ptrs,period,loop,gidx){
   const b=new Uint8Array(40+4*ptrs.length);u32le(b,0,4);u32le(b,12,(gidx<<16)|b.length);u16le(b,24,x&0xffff);u16le(b,26,y&0xffff);u16le(b,28,1);u16le(b,30,0);b[36]=ptrs.length;b[37]=loop?0xff:0;u16le(b,38,period);ptrs.forEach((p,i)=>u32le(b,40+i*4,p));return b
@@ -2762,7 +2762,7 @@ function outlineOffsets(px){
 function widgetMetric(seq,x,y,w,h,fontSize,color,gidx){
   const b=new Uint8Array(56);u32le(b,0,5);u32le(b,4,seq);u32le(b,12,(gidx<<16)|56);
   u16le(b,24,x&0xffff);u16le(b,26,y&0xffff);u16le(b,28,w);u16le(b,30,h);
-  u16le(b,32,0);u16le(b,34,fontSize);u32le(b,36,hexToArgb(color));u32le(b,40,0x01000100);u32le(b,44,0x0000ffff);
+  u16le(b,32,0);u16le(b,34,fontSize);u32le(b,36,hexToArgb(color));u32le(b,40,0x01000001);u32le(b,44,0x0015ffff);
   return b
 }
 const DATE_TEMPLATE_HEX='0d00000000000000000000006400060000000000000000000c001000b8001c00020014001100ffff14000000000000001500ffff13000700000000001200ffff17001500010200000000ffffffffffff00000000ffffffff61f0cfff0000010000001800';

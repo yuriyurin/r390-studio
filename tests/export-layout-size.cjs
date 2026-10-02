@@ -29,6 +29,11 @@ const context=vm.createContext({
 });
 for(const name of ['animationExportFrames','metricHeaderHeight','metricLayout','timeLayout','batteryParts','estimatedBinBytes','rgb565','rasterFromCanvas','clipLayerCanvasToOfficialMask','flattenOfficialPreviewToBlack','canvasOfImage','u16le','u32le','concat','ascii','crc16','widgetType1','widgetAnalog','widgetSprite','widgetTimed','hexToArgb','outlineOffsets','widgetMetric','widgetDate','textRasterCanvas','analogHandCanvas','batteryCanvas','drawBatteryShape','styleBin','makeSetting','oppoContainer','buildStyleForLayers','buildBin'])vm.runInContext(source(name),context);
 const time={id:'time',type:'time',x:20,y:40,w:100,h:100,digitW:25,digitH:40,gap:2,rowGap:8,fontSize:30,color:'#00ffff',minuteColor:'#ffffff',timeStyle:'stacked'};
+const batteryNumber=context.widgetMetric(37,202,13,25,19,13,'#00edf4',0);
+assert.equal(new DataView(batteryNumber.buffer).getUint32(40,true),0x01000001);
+assert.equal(new DataView(batteryNumber.buffer).getUint32(44,true),0x0015ffff);
+const batterySprite=context.widgetSprite(37,169,13,Array(11).fill(0),0);
+assert.equal(new DataView(batterySprite.buffer).getUint32(28,true),1,'battery uses the stock 00001 sprite mode');
 const q=context.timeLayout(time);assert.equal(q.mY,88);assert.equal(q.m10,q.h10);assert.equal(q.colon,null);
 const metric={type:'metric',x:10,y:10,w:100,h:40,label:'Steps',sample:'8264',textureSrc:'png',textureHeight:20,seq:29};
 for(const position of ['left','right','top','bottom','none']){
