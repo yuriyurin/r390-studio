@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>R390 Studio v0.6.12</title>
+<title>R390 Studio v0.6.13</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Lato:wght@400;700&family=Merriweather:wght@400;700&family=Montserrat:wght@400;700&family=Open+Sans:wght@400;700&family=Oswald:wght@400;700&family=Playfair+Display:wght@400;700&family=Roboto:wght@400;700&family=Roboto+Mono:wght@400;700&family=Ubuntu:wght@400;700&display=swap');
 :root{
@@ -1289,7 +1289,7 @@ body.mobile-ui .preview-card .fit3-preview-shell .fit3-case{width:100%;height:10
   <div class="language-switch" role="group" aria-label="Язык интерфейса">
     <button type="button" data-language="ru" aria-pressed="true">RU</button><button type="button" data-language="en" aria-pressed="false">EU</button>
   </div>
-  <div class="brand">R390 Studio <span class="badge">v0.6.12</span></div>
+  <div class="brand">R390 Studio <span class="badge">v0.6.13</span></div>
   <button id="quickStartBtn" class="help-accent">✦ Как начать</button>
   <button id="undoBtn" title="Отменить (Ctrl+Z)" disabled>↶</button>
   <button id="redoBtn" title="Повторить (Ctrl+Shift+Z / Ctrl+Y)" disabled>↷</button>
@@ -2961,10 +2961,15 @@ $('#exportBin').onclick=async()=>{
 
 $('#undoBtn').onclick=()=>undo();
 $('#redoBtn').onclick=()=>redo();
+function shortcutKey(e){
+  const physical={KeyZ:'z',KeyY:'y',KeyD:'d',KeyG:'g'};
+  const letter=(e.key||'').toLowerCase();
+  return physical[e.code]||({'я':'z','н':'y','в':'d','п':'g'}[letter])||letter;
+}
 document.addEventListener('keydown',e=>{
   const mod=e.ctrlKey||e.metaKey;
   if(!mod)return;
-  const k=e.key.toLowerCase();
+  const k=shortcutKey(e);
   if(k==='d'){
     e.preventDefault();
     if(selected)duplicateLayerById(selected);
@@ -2982,7 +2987,7 @@ document.addEventListener('keydown',e=>{
   if(e.ctrlKey||e.metaKey||e.altKey)return;
   const tag=(e.target&&e.target.tagName||'').toLowerCase();
   if(tag==='input'||tag==='textarea'||tag==='select')return;
-  if(e.key.toLowerCase()==='g'){
+  if(shortcutKey(e)==='g'){
     e.preventDefault();
     project.showGrid=!(project.showGrid!==false);
     const cb=$('#showGrid');if(cb)cb.checked=project.showGrid;
