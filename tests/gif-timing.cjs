@@ -1,0 +1,11 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+const html=fs.readFileSync('index.html','utf8').replace(/\r\n/g,'\n');
+const ctx=vm.createContext({Math});
+const start=html.indexOf('function gcd('),end=html.indexOf('\nasync function decodeGifWithImageDecoder(',start);
+vm.runInContext(html.slice(start,end),ctx);
+const frames=Array.from({length:96},(_,n)=>({src:String(n),durationMs:(Math.round((n+1)*100/24)-Math.round(n*100/24))*10}));
+const timing=ctx.normalizeGifTiming(frames);
+assert.equal(timing.fps,24);assert.equal(timing.frames.length,96);assert.equal(timing.exact,false);
+const exact=ctx.normalizeGifTiming([{src:'a',durationMs:100},{src:'b',durationMs:200}]);
+assert.equal(exact.frames.length,3);assert.equal(exact.fps,10);assert.equal(exact.exact,true);
+console.log('Variable GIF delays preserve average 24 fps; exact fixed-delay expansion remains intact.');

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>R390 Studio v0.6.15</title>
+<title>R390 Studio v0.6.16</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Lato:wght@400;700&family=Merriweather:wght@400;700&family=Montserrat:wght@400;700&family=Open+Sans:wght@400;700&family=Oswald:wght@400;700&family=Playfair+Display:wght@400;700&family=Roboto:wght@400;700&family=Roboto+Mono:wght@400;700&family=Ubuntu:wght@400;700&display=swap');
 :root{
@@ -1289,12 +1289,13 @@ body.mobile-ui .preview-card .fit3-preview-shell .fit3-case{width:100%;height:10
   <div class="language-switch" role="group" aria-label="Язык интерфейса">
     <button type="button" data-language="ru" aria-pressed="true">RU</button><button type="button" data-language="en" aria-pressed="false">EU</button>
   </div>
-  <div class="brand">R390 Studio <span class="badge">v0.6.15</span></div>
+  <div class="brand">R390 Studio <span class="badge">v0.6.16</span></div>
   <button id="quickStartBtn" class="help-accent">✦ Как начать</button>
   <button id="undoBtn" title="Отменить (Ctrl+Z)" disabled>↶</button>
   <button id="redoBtn" title="Повторить (Ctrl+Shift+Z / Ctrl+Y)" disabled>↷</button>
-  <label class="filebtn">Открыть<input id="openProject" type="file" accept=".json,.fit3face,.r390face"></label>
+  <label class="filebtn">Открыть<input id="openProject" type="file" accept=".json,.fit3face,.r390face,.zip"></label>
   <button id="saveProject">Сохранить</button>
+  <button id="saveZip" title="Экспорт проекта ZIP">ZIP</button>
   <div class="spacer"></div>
   <button id="newBtn">＋ Новый</button>
   <button id="exportBin" class="primary">Собрать BIN</button>
@@ -1325,7 +1326,7 @@ body.mobile-ui .preview-card .fit3-preview-shell .fit3-case{width:100%;height:10
     <div class="row"><label>ID</label><input id="faceId" type="number" min="200" max="250" placeholder="200–250" value=""></div>
 
     <div class="row"><label>Время</label><input id="previewTime" type="text" value="11:11" maxlength="5"></div>
-    <div class="row"><label>Дата</label><input id="previewDate" type="text" value="11 ноября" maxlength="24"></div>
+    <div class="row"><label>Дата</label><input id="previewDate" type="date"></div>
     <div class="row"><label>Фон</label><input id="bgColor" type="color" value="#3b3b3b"></div>
     <div class="row"><label>Сетка</label><input id="grid" type="number" min="1" max="64" value="8"></div>
     <div class="row"><label>Показывать</label><input id="showGrid" type="checkbox" checked></div>
@@ -1385,6 +1386,9 @@ body.mobile-ui .preview-card .fit3-preview-shell .fit3-case{width:100%;height:10
 </div>
 
 <script src="i18n.js"></script>
+<script src="date-layout.js"></script>
+<script src="vendor/fflate-0.8.3.js"></script>
+<script src="project-zip.js"></script>
 <script>
 'use strict';
 
@@ -1550,7 +1554,7 @@ function normalizeGifTiming(frameData){
     const repeat=Math.max(1,Math.round(durations[i]/base));
     for(let n=0;n<repeat;n++)expanded.push(frameData[i].src);
   }
-  if(expanded.length<=118){
+  if(expanded.length<=118&&durations.every(duration=>duration%base===0)){
     return {frames:expanded,fps:Math.max(1,Math.min(60,Math.round(1000/base))),periodMs:base,exact:true};
   }
   const avg=durations.reduce((a,b)=>a+b,0)/durations.length;
@@ -1695,7 +1699,7 @@ async function decodeAnimatedGif(file){
 function syncProjectInputs(){
   $('#projectName').value=project.projectName||''; $('#faceId').value=(project.faceId>=200&&project.faceId<=250)?project.faceId:'';
   $('#previewTime').value=project.previewTime||'11:11';
-  $('#previewDate').value=project.previewDate||'11 ноября'; $('#bgColor').value=activeBg();
+  $('#previewDate').value=R390Date.calendarValue(project.previewDate); $('#bgColor').value=activeBg();
   $('#grid').value=project.grid??8; $('#showGrid').checked=project.showGrid!==false; $('#snap').checked=project.snap!==false;
 }
 function pullProjectInputs(){
@@ -1827,14 +1831,18 @@ function refreshProps(){
   }
   if(l.type==='animation'){
     h+=numRow('FPS','fps',l,1,60,1);
+    h+=numRow('Шаг кадров','frameStep',{...l,frameStep:l.frameStep||1},1,16,1);
     h+=`<div class="row"><label>Loop</label><input data-k="loop" type="checkbox" ${l.loop!==false?'checked':''}></div>`;
     h+=`<div class="small">${l.frames.length} кадров. Максимум 118 кадров на одну анимацию.</div>`;
   }
   if(l.type==='time'){
+    h+=selectRow('Форма времени','timeStyle',l,[['horizontal','В строку'],['stacked','Часы над минутами'],['hours','Только часы'],['minutes','Только минуты']],'horizontal');
+    if(l.timeStyle==='stacked')h+=numRow('Между строками','rowGap',{...l,rowGap:l.rowGap??8},0,80);
     h+=`<div class="row"><label>Шрифт</label><select data-k="font">${fontOptions(fontFamily(l))}</select></div>`;
     h+=numRow('Digit W','digitW',l,8,120)+numRow('Digit H','digitH',l,8,160)+numRow('Gap','gap',l,-30,60);
     h+=numRow('Размер','fontSize',l,8,160);
     h+=colorRow('Цифры','color',l)+outlineControls(l);
+    h+=colorRow('Минуты','minuteColor',{...l,minuteColor:l.minuteColor||l.color||'#d5d7db'});
     const blinkOn=!!l.blinkColon && editMode!=='aod';
     h+=`<div class="row"><label>Мигающие точки</label><input data-k="blinkColon" type="checkbox" ${l.blinkColon?'checked':''} ${editMode==='aod'?'disabled':''}></div>`;
     h+=`<div class="row"><label>Интервал</label><select data-k="blinkPeriod" ${blinkOn?'':'disabled'}>
@@ -1868,11 +1876,15 @@ function refreshProps(){
     h+=`<div class="row"><label>Выравн.</label><select data-k="align"><option value="left" ${l.align==='left'?'selected':''}>Слева</option><option value="center" ${l.align==='center'?'selected':''}>Центр</option><option value="right" ${l.align==='right'?'selected':''}>Справа</option></select></div>`;
   }
   if(l.type==='date'){
+    h+=selectRow('Формат даты','dateFormat',l,[['legacy','Системный'],['weekdayDayMonth','ПТ 02 ОКТ'],['dayMonth','02 ОКТ'],['dayMonthLong','02 октября'],['monthDay','ОКТ 02'],['numericDM','02.10'],['numericMD','10/02'],['weekday','Пятница'],['day','02']],'legacy');
+    h+=selectRow('Язык даты','dateLanguage',l,[['ru','Русский'],['en','English']],'ru');
     h+=numRow('Размер','fontSize',l,8,60);
     h+=colorRow('Цвет','color',l)+outlineControls(l);
     h+=`<div class="small">Дата остаётся native-виджетом Fit3 и использует системный шрифт часов. Кастомные шрифты применяются к времени и статическому тексту.</div>`;
   }
   if(l.type==='metric'){
+    h+=selectRow('Расположение иконки','iconPosition',l,[['top','Сверху'],['bottom','Снизу'],['left','Слева'],['right','Справа'],['none','Без иконки']],'top');
+    h+=`<div class="row"><label>Показать подпись</label><input data-k="showLabel" type="checkbox" ${l.showLabel!==false?'checked':''}></div>`;
     h+=textureControls(l);
     if(l.textureSrc)h+=numRow('Высота иконки','textureHeight',l,8,160);
     h+=textRow('Подпись','label',l)+textRow('Пример','sample',l);
@@ -1908,7 +1920,14 @@ function refreshProps(){
       if(inp.type==='checkbox')l[k]=inp.checked;
       else if(inp.type==='number')l[k]=Number(inp.value);
       else l[k]=inp.value;
-      if(k==='outlineEnabled'||k==='showSecond'||k==='blinkColon'||k==='style')refreshProps();
+      if(l.type==='time'&&['timeStyle','digitW','digitH','gap','rowGap'].includes(k)){
+        if(l.timeStyle==='stacked'&&l.rowGap==null)l.rowGap=8;
+        const q=timeLayout(l);
+        l.w=l.timeStyle==='stacked'||l.timeStyle==='hours'||l.timeStyle==='minutes'?l.digitW*2+(l.gap||0):q.m1+l.digitW-l.x;
+        l.h=l.timeStyle==='stacked'?l.digitH*2+(l.rowGap??8):l.digitH;
+      }
+      if(k==='dateLanguage'&&(!l.dateFormat||l.dateFormat==='legacy')){l.dateFormat='weekdayDayMonth';refreshProps()}
+      if(k==='outlineEnabled'||k==='showSecond'||k==='blinkColon'||k==='style'||k==='timeStyle'||k==='iconPosition'||k==='dateFormat')refreshProps();
       refreshLayers();estimate();render();scheduleHistory('Свойства слоя');
     };
   });
@@ -1928,11 +1947,23 @@ function refreshProps(){
     const key=btn.dataset.removeTexture;delete l[key];delete l['_'+key];refreshAll();scheduleHistory('PNG виджета');
   });
 }
+function selectRow(label,key,l,options,fallback){return `<div class="row"><label>${label}</label><select data-k="${key}">${options.map(([value,text])=>`<option value="${value}" ${(l[key]||fallback)===value?'selected':''}>${text}</option>`).join('')}</select></div>`}
 function textureControls(l){
   const keys=l.type==='battery'?[['textureEmptySrc','Пустой PNG'],['textureSrc','Полный PNG']]:[['textureSrc','Иконка PNG']];
   return keys.map(([key,label])=>`<div class="row"><label>${label}</label><label class="filebtn">${l[key]?'Заменить PNG':'Загрузить PNG'}<input type="file" accept="image/png" data-texture="${key}" hidden></label>${l[key]?`<button type="button" data-remove-texture="${key}" title="Удалить PNG" aria-label="Удалить PNG">×</button>`:''}</div>`).join('');
 }
 function metricHeaderHeight(l){return l.textureSrc?Math.min(Math.max(1,l.h-12),Math.max(8,Number(l.textureHeight)||24)):Math.max(12,Math.round((l.labelSize||11)*1.6))}
+function metricLayout(l){
+  const value={x:l.x,y:l.y,w:l.w,h:l.h},position=l.iconPosition||'top';
+  const icon=!!l.textureSrc&&position!=='none';
+  if(!icon&&(l.showLabel===false||!l.label))return {value,accessory:null,icon:false};
+  const side=icon&&(position==='left'||position==='right');
+  const size=Math.min(Math.max(1,(side?l.w:l.h)-12),side?(Number(l.textureHeight)||24):metricHeaderHeight(l));
+  const accessory={x:l.x,y:l.y,w:side?size:l.w,h:side?l.h:size};
+  if(side){value.w-=size;if(position==='left')value.x+=size;else accessory.x+=value.w}
+  else {value.h-=size;if(icon&&position==='bottom')accessory.y+=value.h;else value.y+=size}
+  return {value,accessory,icon};
+}
 function drawTexture(c,im,box){
   if(!im)return;
   const scale=Math.min(box.w/im.width,box.h/im.height),w=im.width*scale,h=im.height*scale;
@@ -2025,6 +2056,7 @@ function applyResize(l,d,x,y,keepAspect){
   if(keepAspect){l.x=o.x+(o.w-l.w)/2;l.y=o.y+(o.h-l.h)/2}
   const sx=l.w/Math.max(1,o.w),sy=l.h/Math.max(1,o.h),scale=Math.max(.1,Math.min(sx,sy));
   if(l.type==='time'){
+    if(o.rowGap!=null)l.rowGap=Math.max(0,Math.round(o.rowGap*sy));
     if(o.digitW!=null)l.digitW=Math.max(8,Math.round(o.digitW*sx));
     if(o.digitH!=null)l.digitH=Math.max(8,Math.round(o.digitH*sy));
     if(o.fontSize!=null)l.fontSize=Math.max(8,Math.round(o.fontSize*scale));
@@ -2123,19 +2155,20 @@ function drawTextLayer(c,l){
 function drawDateLayer(c,l){
   c.save();c.fillStyle=l.color||'#d5d7db';c.font=`600 ${l.fontSize||20}px Arial,sans-serif`;
   c.textBaseline='middle';c.textAlign='center';
-  const text=project.previewDate||'11 ноября',x=l.x+l.w/2,y=l.y+l.h/2;
+  const text=datePreviewText(l,project.previewDate),x=l.x+l.w/2,y=l.y+l.h/2;
   drawOutlinedText(c,l,text,x,y,l.color||'#d5d7db',l.w);c.restore();
 }
 function drawMetricLayer(c,l){
-  const labelH=metricHeaderHeight(l);
+  const parts=metricLayout(l),box=parts.value;
   c.save();c.textAlign='center';c.textBaseline='middle';
   c.font=`600 ${l.labelSize||11}px Arial,sans-serif`;
-  const lx=l.x+l.w/2,ly=l.y+labelH/2,label=l.label||'';
-  if(l.textureSrc)drawTexture(c,l._textureSrc,{x:l.x,y:l.y,w:l.w,h:labelH});
-  else drawOutlinedText(c,l,label,lx,ly,l.labelColor||'#aeb2ba',l.w);
+  if(parts.accessory){
+    const a=parts.accessory;
+    if(parts.icon)drawTexture(c,l._textureSrc,a);
+    else drawOutlinedText(c,l,l.label||'',a.x+a.w/2,a.y+a.h/2,l.labelColor||'#aeb2ba',a.w);
+  }
   c.font=`700 ${l.fontSize||26}px Arial,sans-serif`;
-  const val=String(l.sample??'0'),vy=l.y+labelH+(l.h-labelH)/2;
-  drawOutlinedText(c,l,val,lx,vy,l.valueColor||'#d5d7db',l.w);
+  drawOutlinedText(c,l,String(l.sample??'0'),box.x+box.w/2,box.y+box.h/2,l.valueColor||'#d5d7db',box.w);
   c.restore();
 }
 function batteryParts(l){
@@ -2235,19 +2268,22 @@ async function render(){
 }
 function timeLayout(l){
   const dw=l.digitW,g=l.gap;
+  if(l.timeStyle==='stacked')return {h10:l.x,h1:l.x+dw+g,m10:l.x,m1:l.x+dw+g,hY:l.y,mY:l.y+l.digitH+(l.rowGap??8),colon:null};
+  if(l.timeStyle==='hours')return {h10:l.x,h1:l.x+dw+g,m10:null,m1:null,hY:l.y,mY:l.y,colon:null};
+  if(l.timeStyle==='minutes')return {h10:null,h1:null,m10:l.x,m1:l.x+dw+g,hY:l.y,mY:l.y,colon:null};
   const h10=l.x, h1=h10+dw+g;
   const colon=h1+Math.round(dw*.65);
   const m10=colon+Math.round(dw*.6333);
   const m1=m10+dw+g+1;
-  return {h10,h1,colon,m10,m1};
+  return {h10,h1,colon,m10,m1,hY:l.y,mY:l.y};
 }
 function drawTimeLayer(c,l,t,animateColon=false){
   const vals=timeParts(t), dw=l.digitW, dh=l.digitH, q=timeLayout(l),fg=l.color||'#d5d7db';
   c.save();c.textAlign='center';c.textBaseline='middle';c.font=`700 ${l.fontSize}px ${fontCssFamily(l)}`;
   const xs=[q.h10,q.h1,q.m10,q.m1];
-  for(let i=0;i<4;i++)drawOutlinedText(c,l,String(vals[i]),xs[i]+dw/2,l.y+dh/2,fg);
+  for(let i=0;i<4;i++)if(xs[i]!=null)drawOutlinedText(c,l,String(vals[i]),xs[i]+dw/2,(i<2?q.hY:q.mY)+dh/2,i<2?fg:(l.minuteColor||fg));
   const colonVisible=!(animateColon&&l.blinkColon&&l._colonOn===false);
-  if(colonVisible){
+  if(colonVisible&&q.colon!=null){
     const cx=q.colon+dw/2,r=Math.max(2,dw*.055);
     if(l.outlineEnabled){
       const or=r+outlinePx(l);
@@ -2267,18 +2303,47 @@ function refreshTimeline(){
     ui.timeline.appendChild(im)
   })
 }
-function estimate(){
-  let px=256*402*3*2;
-  for(const l of [...(project.layers||[]),...(project.aodLayers||[])]){
-    if(l.type==='image')px+=l.w*l.h*3;
-    else if(l.type==='animation')px+=l.w*l.h*3*l.frames.length;
-    else if(l.type==='time')px+=(l.digitW*l.digitH*3*(11+(l.blinkColon?1:0)));
-    else if(l.type==='analog')px+=18000;
-    else if(l.type==='text')px+=l.w*l.h*3;
-    else if(l.type==='metric')px+=l.w*metricHeaderHeight(l)*3;
-    else if(l.type==='battery')px+=l.w*l.h*3*11;
+function animationExportFrames(l){const step=Math.max(1,Math.min(16,Math.round(Number(l.frameStep)||1)));return {step,frames:(l.frames||[]).filter((_,i)=>i%step===0)}}
+function estimatedBinBytes(p=project){
+  const raster=(w,h,bpp=3)=>16+Math.max(1,Math.floor(w))*Math.max(1,Math.floor(h))*bpp;
+  const resources=R390Date.prepare(SHELL,[...(p.layers||[]),...(p.aodLayers||[])],b64bytes).files;
+  let bytes=32+74*(Object.keys(SHELL).length+3)+256+raster(178,280,2);
+  for(const [name,data] of Object.entries(SHELL))if(name!=='aod.bin')bytes+=(resources[name]||b64bytes(data)).length;
+  for(const [layers,allowAnimation] of [[p.layers||[],true],[p.aodLayers||[],false]]){
+    bytes+=24+40+raster(256,402);
+    for(const l of layers){
+      if(l.visible===false)continue;
+      const copies=1+(l.outlineEnabled?outlineOffsets(l.outlineWidth).length:0);
+      if(l.type==='image'||l.type==='text')bytes+=40+raster(l.w,l.h);
+      else if(l.type==='animation'&&allowAnimation){const n=animationExportFrames(l).frames.length;if(n)bytes+=40+n*4+n*raster(l.w,l.h)}
+      else if(l.type==='date')bytes+=100*copies;
+      else if(l.type==='metric'){
+        const a=metricLayout(l).accessory;if(a)bytes+=40+raster(a.w,a.h);
+        bytes+=56*copies;
+      }else if(l.type==='time'){
+        const pad=l.outlineEnabled?Math.ceil(outlinePx(l))+2:0,q=timeLayout(l),r=raster(l.digitW+pad*2,l.digitH+pad*2);
+        const glyphSets=l.minuteColor&&l.minuteColor!==(l.color||'#d5d7db')?2:1;
+        bytes+=(glyphSets*10+1)*r+(allowAnimation&&l.blinkColon?r:0);
+        if(q.h10!=null)bytes+=48;if(q.h1!=null)bytes+=76;if(q.m10!=null)bytes+=60;if(q.m1!=null)bytes+=76;
+        if(q.colon!=null)bytes+=allowAnimation&&l.blinkColon?48:40;
+      }else if(l.type==='battery'){
+        const parts=batteryParts(l);
+        if(parts.icon)bytes+=80+11*raster(parts.icon.w,parts.icon.h);
+        if(parts.value)bytes+=56*copies;
+        if(parts.pct)bytes+=40+raster(parts.pct.w,parts.pct.h);
+      }else if(l.type==='analog'){
+        const hands=[[l.hourLength||72,l.hourWidth||6,0],[l.minuteLength||106,l.minuteWidth||4,0]];
+        if(allowAnimation&&l.showSecond!==false)hands.push([l.secondLength||116,l.secondWidth||2,l.secondTail||18]);
+        for(const [length,width,tail] of hands){const pad=Math.max(3,Math.ceil(width/2)+2);bytes+=44+raster(Math.max(8,Math.ceil(width)+pad*2),pad*2+Math.round(length)+Math.max(0,Math.round(tail)))}
+        if((l.capRadius||0)>0){const r=Math.max(1,Math.round(l.capRadius));bytes+=40+raster(r*2+4,r*2+4)}
+      }
+    }
   }
-  px+=420000;ui.estimate.textContent=(px/1048576).toFixed(2)+' MiB';ui.estimate.className=px>4*1048576?'warn':'ok';
+  return bytes;
+}
+function estimate(){
+  const bytes=estimatedBinBytes();
+  ui.estimate.textContent=(bytes/1048576).toFixed(2)+' MiB';ui.estimate.className=bytes>4*1048576?'warn':'ok';
 }
 function refreshAll(){refreshLayers();refreshProps();refreshTimeline();estimate();render();updateR390StatusBar()}
 
@@ -2377,7 +2442,7 @@ $('#addAnalog').onclick=()=>addLayer({
 });
 function addLayer(l){if(!modeAllows(l.type)){localizedAlert('Этот слой недоступен в AOD.');return}activeLayers().push(l);selected=l.id;refreshAll();pushHistory('Добавлен '+l.name)}
 $('#addText').onclick=()=>addLayer({id:uid(),type:'text',name:'Текст',x:20,y:180,w:216,h:30,visible:true,text:'Текст',fontSize:22,color:'#d5d7db',bold:false,align:'center',font:'Inter',outlineEnabled:false,outlineColor:'#202226',outlineWidth:1});
-$('#addDate').onclick=()=>addLayer({id:uid(),type:'date',name:'Дата',x:36,y:16,w:184,h:30,visible:true,fontSize:20,color:'#d5d7db',outlineEnabled:false,outlineColor:'#202226',outlineWidth:1});
+$('#addDate').onclick=()=>addLayer({id:uid(),type:'date',name:'Дата',x:36,y:16,w:184,h:30,visible:true,dateFormat:'weekdayDayMonth',dateLanguage:'ru',fontSize:20,color:'#d5d7db',outlineEnabled:false,outlineColor:'#202226',outlineWidth:1});
 $('#addSteps').onclick=()=>addLayer({id:uid(),type:'metric',name:'Шаги',seq:29,x:10,y:326,w:76,h:62,visible:true,label:'ШАГИ',sample:'1262',fontSize:27,labelSize:10,valueColor:'#d5d7db',labelColor:'#aeb2ba',outlineEnabled:false,outlineColor:'#202226',outlineWidth:1});
 $('#addPulse').onclick=()=>addLayer({id:uid(),type:'metric',name:'Пульс',seq:41,x:90,y:326,w:76,h:62,visible:true,label:'ПУЛЬС',sample:'87',fontSize:27,labelSize:10,valueColor:'#d5d7db',labelColor:'#aeb2ba',outlineEnabled:false,outlineColor:'#202226',outlineWidth:1});
 $('#addKcal').onclick=()=>addLayer({id:uid(),type:'metric',name:'Ккал',seq:48,x:170,y:326,w:76,h:62,visible:true,label:'ККАЛ',sample:'1',fontSize:27,labelSize:10,valueColor:'#d5d7db',labelColor:'#aeb2ba',outlineEnabled:false,outlineColor:'#202226',outlineWidth:1});
@@ -2435,7 +2500,7 @@ screen.addEventListener('pointerdown',e=>{
   if(rh){
     drag={mode:'resize',handle:rh.id,cursor:rh.cursor,orig:{
       x:cur.x,y:cur.y,w:cur.w,h:cur.h,
-      fontSize:cur.fontSize,digitW:cur.digitW,digitH:cur.digitH,gap:cur.gap,labelSize:cur.labelSize,textureHeight:cur.textureHeight,
+      fontSize:cur.fontSize,digitW:cur.digitW,digitH:cur.digitH,gap:cur.gap,rowGap:cur.rowGap,labelSize:cur.labelSize,textureHeight:cur.textureHeight,
       hourLength:cur.hourLength,minuteLength:cur.minuteLength,secondLength:cur.secondLength,
       hourWidth:cur.hourWidth,minuteWidth:cur.minuteWidth,secondWidth:cur.secondWidth,secondTail:cur.secondTail
     },startX:p.x,startY:p.y};
@@ -2467,6 +2532,7 @@ function scaleLayerFromDrag(l,d,p){
   const cx=o.x+o.w/2,cy=o.y+o.h/2;
   applyResize(l,{orig:o,handle:'se'},cx+o.w*scale/2,cy+o.h*scale/2,true);
 }
+function datePreviewText(l,value){return R390Date.preview(l,value)}
 function continueCanvasDrag(e){
   if(!drag)return;
   const p=eventToCanvas(e);
@@ -2557,6 +2623,15 @@ requestAnimationFrame(tick);
 $('#saveProject').onclick=()=>{
   pullProjectInputs();const clean=JSON.stringify(project,(k,v)=>k.startsWith('_')?undefined:v,2);dl(new Blob([clean],{type:'application/json'}),`R390_${String(project.faceId).padStart(5,'0')}_${(project.projectName||'project').replace(/[^a-zA-Z0-9а-яА-ЯёЁ_-]+/g,'_')}.r390face.json`)
 };
+$('#saveZip').onclick=async()=>{
+  const button=$('#saveZip');button.disabled=true;
+  try{
+    pullProjectInputs();
+    const preview=await renderProjectToCanvas(true),bytes=await R390Zip.encode(project,preview.toDataURL('image/png'));
+    dl(new Blob([bytes],{type:'application/zip'}),`${(project.projectName||'R390_project').replace(/[^a-zA-Z0-9а-яА-ЯёЁ_-]+/g,'_')}.r390face.zip`);
+    setStatus('ZIP проекта сохранён','ok');
+  }catch(err){localizedAlert('Ошибка проекта: '+err.message)}finally{button.disabled=false}
+};
 async function hydrateProject(p){
   p.version=7;p.previewDate=p.previewDate||'11 ноября';p.bgColor=p.bgColor||'#3b3b3b';p.aodBgColor=p.aodBgColor||'#000000';
   p.showGrid=p.showGrid!==false;p.layers=p.layers||[];p.aodLayers=p.aodLayers||[];p.customFonts=p.customFonts||[];
@@ -2565,6 +2640,7 @@ async function hydrateProject(p){
   for(const l of all){
     if(l.type==='time'){
       if(l.blinkColon==null)l.blinkColon=false;
+      if(l.timeStyle==='stacked'&&l.rowGap==null)l.rowGap=8;
       l.blinkPeriod=Number(l.blinkPeriod)||500;
       l._colonOn=true;l._colonAcc=0;
     }
@@ -2594,7 +2670,7 @@ async function hydrateProject(p){
 $('#openProject').onchange=async e=>{
   const f=e.target.files[0];if(!f)return;
   try{
-    const p=JSON.parse(await f.text());
+    const p=/\.zip$/i.test(f.name)?R390Zip.decode(new Uint8Array(await f.arrayBuffer())):JSON.parse(await f.text());
     setStatus('Загрузка ресурсов проекта…');
     await hydrateProject(p);
     project=p;editMode='main';selected=null;syncProjectInputs();updateModeUI();
@@ -2690,10 +2766,8 @@ function widgetMetric(seq,x,y,w,h,fontSize,color,gidx){
   return b
 }
 const DATE_TEMPLATE_HEX='0d00000000000000000000006400060000000000000000000c001000b8001c00020014001100ffff14000000000000001500ffff13000700000000001200ffff17001500010200000000ffffffffffff00000000ffffffff61f0cfff0000010000001800';
-function widgetDate(x,y,w,h,fontSize,color,gidx){
-  const b=hexBytes(DATE_TEMPLATE_HEX);u32le(b,12,(gidx<<16)|100);
-  u16le(b,24,x&0xffff);u16le(b,26,y&0xffff);u16le(b,28,w);u16le(b,30,h);u16le(b,34,fontSize);
-  u32le(b,88,hexToArgb(color));return b
+function widgetDate(x,y,w,h,fontSize,color,gidx,l={}){
+  return R390Date.widget({...l,x,y,w,h,fontSize,color},hexBytes(DATE_TEMPLATE_HEX),l._dateBase,gidx);
 }
 function textRasterCanvas(l,text,color,fontSize,bold,align='center'){
   const c=document.createElement('canvas');c.width=Math.max(1,Math.round(l.w));c.height=Math.max(1,Math.round(l.h));const q=c.getContext('2d');
@@ -2800,12 +2874,13 @@ async function buildStyleForLayers(layers,bgColor,{allowAnimation=true}={}){
       const ri=rasters.length;rasters.push(rasterFromCanvas(can,true));specs.push({kind:'static',x:l.x,y:l.y,raster:ri});
     }else if(l.type==='animation'){
       if(!allowAnimation)continue;
-      if(!l.frames.length)continue;if(l.frames.length>118)throw new Error('Анимация больше 118 кадров');
-      const inds=[];for(const fr of l.frames){
+      const exported=animationExportFrames(l);
+      if(!exported.frames.length)continue;if(exported.frames.length>118)throw new Error('Анимация больше 118 кадров');
+      const inds=[];for(const fr of exported.frames){
         let can=await canvasOfImage(fr,l.w,l.h);can=clipLayerCanvasToOfficialMask(can,l.x,l.y);
         inds.push(rasters.length);rasters.push(rasterFromCanvas(can,true));
       }
-      specs.push({kind:'timed',x:l.x,y:l.y,rasters:inds,period:Math.max(1,Math.round(1000/l.fps)),loop:l.loop!==false});
+      specs.push({kind:'timed',x:l.x,y:l.y,rasters:inds,period:Math.max(1,Math.round(1000/l.fps*exported.step)),loop:l.loop!==false});
     }else if(l.type==='analog'){
       const center=analogCenter(l);
       const hands=[
@@ -2826,13 +2901,15 @@ async function buildStyleForLayers(layers,bgColor,{allowAnimation=true}={}){
       }
     }else if(l.type==='time'){
       await waitFont(fontFamily(l),l.fontSize||68,700);
-      const pad=l.outlineEnabled?Math.ceil(outlinePx(l))+2:0,inds=[],fg=l.color||'#d5d7db';
-      for(let d=0;d<=9;d++){
+      const pad=l.outlineEnabled?Math.ceil(outlinePx(l))+2:0,inds=[],minuteInds=[],fg=l.color||'#d5d7db';
+      const glyphSets=l.minuteColor&&l.minuteColor!==fg?2:1;
+      for(let group=0;group<glyphSets;group++)for(let d=0;d<=9;d++){
         const can=document.createElement('canvas');can.width=l.digitW+pad*2;can.height=l.digitH+pad*2;const q=can.getContext('2d');
         q.textAlign='center';q.textBaseline='middle';q.font=`700 ${l.fontSize}px ${fontCssFamily(l)}`;
-        drawOutlinedText(q,l,String(d),pad+l.digitW/2,pad+l.digitH/2,fg);
-        inds.push(rasters.length);rasters.push(rasterFromCanvas(can,true));
+        drawOutlinedText(q,l,String(d),pad+l.digitW/2,pad+l.digitH/2,group?(l.minuteColor||fg):fg);
+        (group?minuteInds:inds).push(rasters.length);rasters.push(rasterFromCanvas(can,true));
       }
+      if(glyphSets===1)minuteInds.push(...inds);
       const cc=document.createElement('canvas');cc.width=l.digitW+pad*2;cc.height=l.digitH+pad*2;const q=cc.getContext('2d');
       const cx=pad+l.digitW/2,rr=Math.max(2,l.digitW*.055);
       if(l.outlineEnabled){
@@ -2846,19 +2923,22 @@ async function buildStyleForLayers(layers,bgColor,{allowAnimation=true}={}){
         const off=document.createElement('canvas');off.width=cc.width;off.height=cc.height;
         colonOff=rasters.length;rasters.push(rasterFromCanvas(off,true));
       }
-      specs.push({kind:'time',l,digits:inds,colon,colonOff,pad,blinkPeriod:Math.max(100,Number(l.blinkPeriod)||500)});
+      specs.push({kind:'time',l,digits:inds,minuteDigits:minuteInds,colon,colonOff,pad,blinkPeriod:Math.max(100,Number(l.blinkPeriod)||500)});
     }else if(l.type==='text'){
       await waitFont(fontFamily(l),l.fontSize||20,l.bold?700:400);
       const can=textRasterCanvas(l,l.text||'Текст',l.color||'#d5d7db',l.fontSize||20,l.bold,l.align||'center'),ri=rasters.length;
       rasters.push(rasterFromCanvas(can,true));specs.push({kind:'static',x:l.x,y:l.y,raster:ri});
     }else if(l.type==='metric'){
-      const labelH=metricHeaderHeight(l),labelLayer={w:l.w,h:labelH,font:'Inter',outlineEnabled:l.outlineEnabled,outlineColor:l.outlineColor,outlineWidth:l.outlineWidth};
-      const can=l.textureSrc?document.createElement('canvas'):textRasterCanvas(labelLayer,l.label||'',l.labelColor||'#aeb2ba',l.labelSize||10,true,'center'),ri=rasters.length;
-      if(l.textureSrc){can.width=l.w;can.height=labelH;drawTexture(can.getContext('2d'),l._textureSrc||await loadImg(l.textureSrc),{x:0,y:0,w:l.w,h:labelH})}
-      rasters.push(rasterFromCanvas(can,true));specs.push({kind:'static',x:l.x,y:l.y,raster:ri});
-      specs.push({kind:'metric',seq:l.seq,x:l.x,y:l.y+labelH,w:l.w,h:Math.max(12,l.h-labelH),fontSize:l.fontSize||27,color:l.valueColor||'#d5d7db',outlineEnabled:l.outlineEnabled,outlineColor:l.outlineColor,outlineWidth:l.outlineWidth});
+      const parts=metricLayout(l),a=parts.accessory;
+      if(a){
+        const labelLayer={...l,w:a.w,h:a.h,font:'Inter'};
+        const can=parts.icon?document.createElement('canvas'):textRasterCanvas(labelLayer,l.label||'',l.labelColor||'#aeb2ba',l.labelSize||10,true,'center'),ri=rasters.length;
+        if(parts.icon){can.width=a.w;can.height=a.h;drawTexture(can.getContext('2d'),l._textureSrc||await loadImg(l.textureSrc),{x:0,y:0,w:a.w,h:a.h})}
+        rasters.push(rasterFromCanvas(can,true));specs.push({kind:'static',x:a.x,y:a.y,raster:ri});
+      }
+      specs.push({kind:'metric',seq:l.seq,...parts.value,fontSize:l.fontSize||27,color:l.valueColor||'#d5d7db',outlineEnabled:l.outlineEnabled,outlineColor:l.outlineColor,outlineWidth:l.outlineWidth});
     }else if(l.type==='date'){
-      specs.push({kind:'date',x:l.x,y:l.y,w:l.w,h:l.h,fontSize:l.fontSize||20,color:l.color||'#d5d7db',outlineEnabled:l.outlineEnabled,outlineColor:l.outlineColor,outlineWidth:l.outlineWidth});
+      specs.push({kind:'date',l,x:l.x,y:l.y,w:l.w,h:l.h,fontSize:l.fontSize||20,color:l.color||'#d5d7db',outlineEnabled:l.outlineEnabled,outlineColor:l.outlineColor,outlineWidth:l.outlineWidth});
     }else if(l.type==='battery'){
       const style=l.style||'icon',parts=batteryParts(l),col=l.color||'#d9ff79';
       if(parts.icon){
@@ -2895,18 +2975,18 @@ async function buildStyleForLayers(layers,bgColor,{allowAnimation=true}={}){
         ws.push(widgetMetric(sp.seq,sp.x,sp.y,sp.w,sp.h,sp.fontSize,sp.color,ws.length));
       }
       else if(sp.kind==='date'){
-        if(sp.outlineEnabled)for(const [dx,dy] of outlineOffsets(sp.outlineWidth))ws.push(widgetDate(sp.x+dx,sp.y+dy,sp.w,sp.h,sp.fontSize,sp.outlineColor||'#202226',ws.length));
-        ws.push(widgetDate(sp.x,sp.y,sp.w,sp.h,sp.fontSize,sp.color,ws.length));
+        if(sp.outlineEnabled)for(const [dx,dy] of outlineOffsets(sp.outlineWidth))ws.push(widgetDate(sp.x+dx,sp.y+dy,sp.w,sp.h,sp.fontSize,sp.outlineColor||'#202226',ws.length,sp.l));
+        ws.push(widgetDate(sp.x,sp.y,sp.w,sp.h,sp.fontSize,sp.color,ws.length,sp.l));
       }
       else if(sp.kind==='time'){
         const l=sp.l,q=timeLayout(l),p=sp.pad||0;
-        ws.push(widgetSprite(2,q.h10-p,l.y-p,sp.digits.slice(0,3).map(i=>rel[i]),ws.length));
-        ws.push(widgetSprite(3,q.h1-p,l.y-p,sp.digits.map(i=>rel[i]),ws.length));
-        ws.push(widgetSprite(10,q.m10-p,l.y-p,sp.digits.slice(0,6).map(i=>rel[i]),ws.length));
-        ws.push(widgetSprite(11,q.m1-p,l.y-p,sp.digits.map(i=>rel[i]),ws.length));
-        if(sp.colonOff!=null){
+        if(q.h10!=null)ws.push(widgetSprite(2,q.h10-p,q.hY-p,sp.digits.slice(0,3).map(i=>rel[i]),ws.length));
+        if(q.h1!=null)ws.push(widgetSprite(3,q.h1-p,q.hY-p,sp.digits.map(i=>rel[i]),ws.length));
+        if(q.m10!=null)ws.push(widgetSprite(10,q.m10-p,q.mY-p,sp.minuteDigits.slice(0,6).map(i=>rel[i]),ws.length));
+        if(q.m1!=null)ws.push(widgetSprite(11,q.m1-p,q.mY-p,sp.minuteDigits.map(i=>rel[i]),ws.length));
+        if(q.colon!=null&&sp.colonOff!=null){
           ws.push(widgetTimed(q.colon-p,l.y-p,[rel[sp.colon],rel[sp.colonOff]],sp.blinkPeriod,true,ws.length));
-        }else{
+        }else if(q.colon!=null){
           ws.push(widgetType1(q.colon-p,l.y-p,rel[sp.colon],ws.length));
         }
       }
@@ -2916,6 +2996,10 @@ async function buildStyleForLayers(layers,bgColor,{allowAnimation=true}={}){
 }
 async function buildBin(){
   pullProjectInputs();setStatus('Сборка основного экрана и AOD…');
+  const expected=estimatedBinBytes();
+  if(expected>4*1048576)throw new Error(`BIN ${(expected/1048576).toFixed(2)} MiB > 4 MiB`);
+  const dateResources=R390Date.prepare(SHELL,[...(project.layers||[]),...(project.aodLayers||[])],b64bytes);
+  for(const l of [...(project.layers||[]),...(project.aodLayers||[])])l._dateBase=dateResources.bases.get(l);
   const style=await buildStyleForLayers(project.layers||[],project.bgColor||'#000000',{allowAnimation:true});
   const aod=await buildStyleForLayers(project.aodLayers||[],project.aodBgColor||'#000000',{allowAnimation:false});
   const fullMasked=await renderLayersToCanvas(project.layers||[],project.bgColor||'#000000',true);
@@ -2924,6 +3008,7 @@ async function buildBin(){
   const preview=rasterFromCanvas(pc,false);
   const files={};
   for(const n of Object.keys(SHELL))if(n!=='aod.bin')files[n]=b64bytes(SHELL[n]);
+  Object.assign(files,dateResources.files);
   files['aod.bin']=aod;files['preview.bin']=preview;files['style0.bin']=style;files['setting.bin']=makeSetting(project.faceId,1);
   const bin=oppoContainer(project.faceId,files);validateBin(bin);
   if(bin.length>4*1024*1024)throw new Error(`BIN ${(bin.length/1048576).toFixed(2)} MiB > 4 MiB`);

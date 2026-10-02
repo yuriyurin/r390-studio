@@ -31,6 +31,6 @@ for (const direction of ['up', 'right']) {
     assert.equal(calls.filter(x => x[0] === 'drawImage').length, 2);
   }
 }
-assert.ok(html.includes("k==='style')refreshProps()"));
+assert.ok(html.includes("k==='style'||k==='timeStyle'"));
 assert.ok(html.includes("specs.push({kind:'sprite',seq:37"));
 console.log('Widget texture and percentage tests passed; inline scripts compile.');

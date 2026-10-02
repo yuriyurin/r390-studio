@@ -1,6 +1,12 @@
 /* Interface translations never modify project data or watch-face text. */
 const R390_I18N = (() => {
   const entries = {
+    'Форма времени':'Time layout', 'В строку':'Horizontal', 'Часы над минутами':'Hours above minutes',
+    'Только часы':'Hours only', 'Только минуты':'Minutes only', 'Между строками':'Row gap', 'Минуты':'Minutes',
+    'Формат даты':'Date format', 'Язык даты':'Date language', 'Системный':'System', 'Русский':'Russian',
+    'ПТ 02 ОКТ':'FRI 02 OCT', '02 ОКТ':'02 OCT', '02 октября':'02 October', 'ОКТ 02':'OCT 02', 'Пятница':'Friday',
+    'Расположение иконки':'Icon position', 'Сверху':'Top', 'Снизу':'Bottom', 'Без иконки':'No icon', 'Показать подпись':'Show label',
+    'Шаг кадров':'Frame step', 'Экспорт проекта ZIP':'Export project ZIP', 'ZIP проекта сохранён':'Project ZIP saved',
     'Размер меняется на холсте за 8 маркеров. Shift сохраняет пропорции.':'Resize using the eight canvas handles. Shift preserves the aspect ratio.',
     'Свой PNG':'Custom PNG', 'Показать проценты':'Show percentage', 'Высота иконки':'Icon height',
     'Пустой PNG':'Empty PNG', 'Полный PNG':'Full PNG', 'Иконка PNG':'PNG icon',
