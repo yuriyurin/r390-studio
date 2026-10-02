@@ -56,7 +56,7 @@ const R390Date = (() => {
   function widget(layer,template,base,gidx){
     const bytes=template.slice(),view=new DataView(bytes.buffer);
     const put16=(off,val)=>view.setUint16(off,val,true),put32=(off,val)=>view.setUint32(off,val>>>0,true);
-    put32(12,(gidx<<16)|100);put16(24,Math.round(layer.x));put16(26,Math.round(layer.y));put16(28,Math.round(layer.w));put16(30,Math.round(layer.h));put16(32,0);put16(34,layer.fontSize||20);
+    put32(12,(gidx<<16)|100);put16(24,Math.round(layer.x));put16(26,Math.round(layer.y));put16(28,Math.round(layer.w));put16(30,Math.round(layer.h));put32(32,1);
     if(base!=null){
       const format=layer.dateFormat,parts=fields(format),separator=base+(format==='numericDM'?39:format==='numericMD'?40:38);
       for(let i=0;i<4;i++){

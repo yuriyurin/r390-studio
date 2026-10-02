@@ -18,7 +18,7 @@ for(const data of Object.values(resources.files)){
 for(const format of ['weekdayDayMonth','dayMonth','dayMonthLong','monthDay','numericDM','numericMD','weekday','day']){
   const layer={...en,dateFormat:format},bytes=dates.widget(layer,template,25,3),view=new DataView(bytes.buffer);
   assert.equal(view.getUint32(0,true),13);assert.equal(view.getUint32(12,true),(3<<16)|100);
-  assert.equal(view.getUint16(32,true),0,'date uses absolute placement, not the stock anchor');
+  assert.equal(view.getUint32(32,true),1,'left anchor occupies all four bytes without font-size contamination');
   const expected=dates.fields(format).map(k=>k.startsWith('week')?17:k==='day'?18:21);
   for(let i=0;i<expected.length;i++)assert.equal(view.getUint16(36+i*12,true),expected[i]);
   assert.equal(view.getUint32(88,true),0xff00ffff);
