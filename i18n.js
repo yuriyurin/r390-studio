@@ -1,6 +1,7 @@
 /* Interface translations never modify project data or watch-face text. */
 const R390_I18N = (() => {
   const entries = {
+    'Касания холста':'Canvas touch mode', 'Прокрутка':'Scroll', 'Правка':'Edit',
     'Язык интерфейса':'Interface language', '✦ Как начать':'✦ Quick start',
     'Отменить (Ctrl+Z)':'Undo (Ctrl+Z)', 'Повторить (Ctrl+Shift+Z / Ctrl+Y)':'Redo (Ctrl+Shift+Z / Ctrl+Y)',
     'Открыть':'Open', 'Сохранить':'Save', '＋ Новый':'＋ New', 'Собрать BIN':'Build BIN', 'Готово':'Ready',
