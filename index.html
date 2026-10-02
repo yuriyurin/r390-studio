@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>R390 Studio v0.6.14</title>
+<title>R390 Studio v0.6.15</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Lato:wght@400;700&family=Merriweather:wght@400;700&family=Montserrat:wght@400;700&family=Open+Sans:wght@400;700&family=Oswald:wght@400;700&family=Playfair+Display:wght@400;700&family=Roboto:wght@400;700&family=Roboto+Mono:wght@400;700&family=Ubuntu:wght@400;700&display=swap');
 :root{
@@ -1289,7 +1289,7 @@ body.mobile-ui .preview-card .fit3-preview-shell .fit3-case{width:100%;height:10
   <div class="language-switch" role="group" aria-label="Язык интерфейса">
     <button type="button" data-language="ru" aria-pressed="true">RU</button><button type="button" data-language="en" aria-pressed="false">EU</button>
   </div>
-  <div class="brand">R390 Studio <span class="badge">v0.6.14</span></div>
+  <div class="brand">R390 Studio <span class="badge">v0.6.15</span></div>
   <button id="quickStartBtn" class="help-accent">✦ Как начать</button>
   <button id="undoBtn" title="Отменить (Ctrl+Z)" disabled>↶</button>
   <button id="redoBtn" title="Повторить (Ctrl+Shift+Z / Ctrl+Y)" disabled>↷</button>
@@ -2007,21 +2007,22 @@ function applyResize(l,d,x,y,keepAspect){
 
   if(keepAspect){
     const aspect=o.w/o.h;
-    let w=right-left,h=bottom-top;
+    const cx=o.x+o.w/2,cy=o.y+o.h/2;
+    let w=handle.includes('w')?2*(cx-snapValue(x)):handle.includes('e')?2*(snapValue(x)-cx):o.w;
+    let h=handle.includes('n')?2*(cy-snapValue(y)):handle.includes('s')?2*(snapValue(y)-cy):o.h;
     const horizontal=handle.includes('w')||handle.includes('e');
     const vertical=handle.includes('n')||handle.includes('s');
     if(horizontal&&(!vertical||Math.abs(w/o.w-1)>=Math.abs(h/o.h-1)))h=w/aspect;
     else w=h*aspect;
+    w=Math.max(minSize,minSize*aspect,w);h=w/aspect;
     const scale=Math.max(1,minSize/w,minSize/h);w*=scale;h*=scale;
-    if(handle.includes('w'))left=right-w; else right=left+w;
-    if(handle.includes('n'))top=bottom-h; else bottom=top+h;
-    if(!horizontal){left=o.x+(o.w-w)/2;right=left+w}
-    if(!vertical){top=o.y+(o.h-h)/2;bottom=top+h}
+    left=cx-w/2;right=cx+w/2;top=cy-h/2;bottom=cy+h/2;
   }
 
   l.x=Math.round(left);l.y=Math.round(top);
   l.w=Math.max(minSize,Math.round(right-left));
   l.h=Math.max(minSize,Math.round(bottom-top));
+  if(keepAspect){l.x=o.x+(o.w-l.w)/2;l.y=o.y+(o.h-l.h)/2}
   const sx=l.w/Math.max(1,o.w),sy=l.h/Math.max(1,o.h),scale=Math.max(.1,Math.min(sx,sy));
   if(l.type==='time'){
     if(o.digitW!=null)l.digitW=Math.max(8,Math.round(o.digitW*sx));
@@ -2445,7 +2446,7 @@ screen.addEventListener('pointerdown',e=>{
   const hit=[...activeLayers()].reverse().find(l=>l.visible!==false&&p.x>=l.x&&p.x<=l.x+l.w&&p.y>=l.y&&p.y<=l.y+l.h);
   if(hit){
     selected=hit.id;
-    drag={mode:'move',dx:p.x-hit.x,dy:p.y-hit.y,originX:hit.x,originY:hit.y,startX:p.x,startY:p.y,axis:null};
+    drag={mode:'move',dx:p.x-hit.x,dy:p.y-hit.y,startX:p.x,startY:p.y,orig:{...hit}};
     try{screen.setPointerCapture(e.pointerId)}catch(_){}
     refreshAll();
   }else{
@@ -2461,16 +2462,10 @@ screen.addEventListener('pointermove',e=>{
   updateCanvasCursor(p.x,p.y);
 });
 
-function constrainedMove(d,p,shift){
-  let x=snapValue(p.x-d.dx),y=snapValue(p.y-d.dy);
-  if(shift){
-    const dx=p.x-d.startX,dy=p.y-d.startY;
-    if(!d.axis&&Math.max(Math.abs(dx),Math.abs(dy))>=2)d.axis=Math.abs(dx)>=Math.abs(dy)?'x':'y';
-    if(d.axis==='x')y=d.originY;
-    else if(d.axis==='y')x=d.originX;
-    else {x=d.originX;y=d.originY}
-  }else d.axis=null;
-  return {x:Math.round(x),y:Math.round(y)};
+function scaleLayerFromDrag(l,d,p){
+  const o=d.orig,scale=Math.max(8/o.w,8/o.h,1+((p.x-d.startX)-(p.y-d.startY))/Math.max(o.w,o.h));
+  const cx=o.x+o.w/2,cy=o.y+o.h/2;
+  applyResize(l,{orig:o,handle:'se'},cx+o.w*scale/2,cy+o.h*scale/2,true);
 }
 function continueCanvasDrag(e){
   if(!drag)return;
@@ -2482,9 +2477,9 @@ function continueCanvasDrag(e){
     applyResize(l,drag,p.x,p.y,e.shiftKey);
     refreshProps();estimate();render();
   }else{
-    const pos=constrainedMove(drag,p,e.shiftKey);
-    l.x=pos.x;l.y=pos.y;
-    refreshProps();render();
+    if(e.shiftKey)scaleLayerFromDrag(l,drag,p);
+    else {l.x=Math.round(snapValue(p.x-drag.dx));l.y=Math.round(snapValue(p.y-drag.dy))}
+    refreshProps();estimate();render();
   }
   e.preventDefault();
 }

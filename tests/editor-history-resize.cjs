@@ -12,8 +12,8 @@ for (const handle of ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw']) {
   sizing.applyResize(layer, {orig, handle}, handle.includes('w') ? -80 : 220, handle.includes('n') ? -10 : 140, true);
   assert.equal(layer.w / layer.h, 2, handle);
   assert.equal(layer.textureHeight, Math.round(20 * layer.h / 50), handle);
-  if (handle.length === 1 && ['e', 'w'].includes(handle)) assert.equal(layer.y + layer.h / 2, 65);
-  if (handle.length === 1 && ['n', 's'].includes(handle)) assert.equal(layer.x + layer.w / 2, 70);
+  assert.equal(layer.y + layer.h / 2, 65);
+  assert.equal(layer.x + layer.w / 2, 70);
 }
 const plain = {x: 0, y: 0, w: 100, h: 50};
 sizing.applyResize(plain, {orig: {...plain}, handle: 'e'}, 150, 50, false);
