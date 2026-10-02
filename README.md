@@ -6,8 +6,6 @@
 
 ## GitHub Pages
 
-После включения Pages для ветки `main` и папки `/ (root)` сайт будет доступен по адресу:
-
 https://yuriyurin.github.io/r390-studio/
 
 ## Структура
