@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>R390 Studio v0.6.7</title>
+<title>R390 Studio v0.6.8</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Lato:wght@400;700&family=Merriweather:wght@400;700&family=Montserrat:wght@400;700&family=Open+Sans:wght@400;700&family=Oswald:wght@400;700&family=Playfair+Display:wght@400;700&family=Roboto:wght@400;700&family=Roboto+Mono:wght@400;700&family=Ubuntu:wght@400;700&display=swap');
 :root{
@@ -1255,11 +1255,22 @@ body.mobile-ui .guide-author-label{
   display:none;
 }
 
+.language-switch{display:flex;flex:0 0 auto;align-items:center;gap:0;border:1px solid var(--line2);border-radius:4px;overflow:hidden;background:var(--panel2)}
+.top .language-switch button{border:0;border-radius:0;margin:0;min-width:34px;padding:6px 8px;box-shadow:none}
+.language-switch button+button{border-left:1px solid var(--line2)}
+.language-switch button.active{background:#0067b8;color:#fff}
+.language-switch button:focus-visible{outline:2px solid var(--accent2);outline-offset:-2px}
+body.mobile-ui .top .language-switch button{min-width:34px;height:34px;padding:5px 7px}
+html[lang=en] .sidebar .row>label{flex:0 0 84px;width:84px}
+html[lang=en] .props .row>label{overflow-wrap:break-word}
 </style>
 </head>
 <body>
 <div class="top">
-  <div class="brand">R390 Studio <span class="badge">v0.6.7</span></div>
+  <div class="language-switch" role="group" aria-label="Язык интерфейса">
+    <button type="button" data-language="ru" aria-pressed="true">RU</button><button type="button" data-language="en" aria-pressed="false">EU</button>
+  </div>
+  <div class="brand">R390 Studio <span class="badge">v0.6.8</span></div>
   <button id="quickStartBtn" class="help-accent">✦ Как начать</button>
   <button id="undoBtn" title="Отменить (Ctrl+Z)" disabled>↶</button>
   <button id="redoBtn" title="Повторить (Ctrl+Shift+Z / Ctrl+Y)" disabled>↷</button>
@@ -1336,13 +1347,13 @@ body.mobile-ui .guide-author-label{
 
 <aside class="props">
   <div class="section">
-    <h3>Preview</h3>
+    <h3>Предпросмотр</h3>
     <div class="previews">
       <div class="preview-card"><b>Основной</b><canvas id="mainPreview" width="128" height="201"></canvas></div>
       <div class="preview-card"><b>AOD</b><canvas id="aodPreview" width="128" height="201"></canvas></div>
     </div>
   </div>
-  <div class="section"><h3>Инспектор</h3><div id="propBox" class="small">Выбери слой слева.</div></div>
+  <div class="section"><h3>Инспектор</h3><div id="propBox" class="small">Выберите слой в списке.</div></div>
   <div class="section">
     <h3>Слои проекта</h3>
     <div id="layers" class="layers"></div>
@@ -1351,6 +1362,7 @@ body.mobile-ui .guide-author-label{
 </aside>
 </div>
 
+<script src="i18n.js"></script>
 <script>
 'use strict';
 
@@ -1464,7 +1476,7 @@ function updateR390StatusBar(){
   if(!bar||!project)return;
   const id=(project.faceId>=200&&project.faceId<=250)?String(project.faceId).padStart(5,'0'):'—';
   const n=(project.projectName||'').trim();
-  bar.innerHTML=`<span>R390 Studio · ${n?escapeHtml(n)+' · ':''}ID ${id} · ${editMode==='aod'?'AOD':'Основной'} · 256×402</span><span class="author-block">Автор: <a class="author-button" href="https://4pda.to/forum/index.php?showuser=4729981" target="_blank" rel="noopener noreferrer">yuriyurin</a> <a class="support-button" href="https://www.donationalerts.com/r/yuriyurinnn" target="_blank" rel="noopener noreferrer">❤ Поддержать</a><span class="ui-mode-mini" title="Режим интерфейса">
+  bar.innerHTML=`<span>R390 Studio · ${n?escapeHtml(n)+' · ':''}ID ${id} · ${editMode==='aod'?'AOD':R390_I18N.translate('Основной')} · 256×402</span><span class="author-block">Автор: <a class="author-button" href="https://4pda.to/forum/index.php?showuser=4729981" target="_blank" rel="noopener noreferrer">yuriyurin</a> <a class="support-button" href="https://www.donationalerts.com/r/yuriyurinnn" target="_blank" rel="noopener noreferrer">❤ Поддержать</a><span class="ui-mode-mini" title="Режим интерфейса">
   <button id="uiModePc" type="button" class="active" title="PC">PC</button><button id="uiModeMobile" type="button" title="Мобильный">▯</button>
 </span></span>`;
   if(window.syncR390UiModeButtons)window.syncR390UiModeButtons();
@@ -1763,7 +1775,7 @@ function textRow(label,key,l){
 }
 function refreshProps(){
   const l=getSel();
-  if(!l){ui.prop.innerHTML='<span class="small">Выбери слой слева.</span>';return}
+  if(!l){ui.prop.innerHTML='<span class="small">Выберите слой в списке.</span>';return}
   let h=`<div class="row"><label>Имя</label><input data-k="name" type="text" value="${escapeHtml(l.name)}"></div>`;
   h+=numRow('X','x',l,-512,512)+numRow('Y','y',l,-804,804)+numRow('Ширина','w',l,1,512)+numRow('Высота','h',l,1,804);
   h+=`<div class="row"><label>Видимый</label><input data-k="visible" type="checkbox" ${l.visible!==false?'checked':''}></div>`;
@@ -2219,7 +2231,7 @@ $('#fontUpload').onchange=async e=>{
     project.customFonts.push({name:f.name.replace(/\.(ttf|otf|woff2?)$/i,''),family,data});
     e.target.value='';refreshProps();render();pushHistory('Добавлен шрифт');
     setStatus('Шрифт добавлен: '+f.name,'ok');
-  }catch(err){e.target.value='';alert('Не удалось загрузить шрифт: '+err.message)}
+  }catch(err){e.target.value='';localizedAlert('Не удалось загрузить шрифт: '+err.message)}
 };
 document.fonts.ready.then(()=>{if(project){render();schedulePreviewRefresh()}});
 
@@ -2229,7 +2241,7 @@ $('#addImage').onchange=async e=>{
   const l={id:uid(),type:'image',name:f.name,x:Math.round((256-w)/2),y:Math.round((402-h)/2),w,h,visible:true,src,_im:im};activeLayers().push(l);selected=l.id;e.target.value='';refreshAll();pushHistory('Добавлено изображение');
 };
 $('#addAnim').onchange=async e=>{
-  if(editMode==='aod'){alert('В AOD анимация отключена для экономии энергии.');e.target.value='';return}
+  if(editMode==='aod'){localizedAlert('В AOD анимация отключена для экономии энергии.');e.target.value='';return}
   const fs=[...e.target.files].sort((a,b)=>a.name.localeCompare(b.name,undefined,{numeric:true}));
   if(!fs.length)return;
   try{
@@ -2257,7 +2269,7 @@ $('#addAnim').onchange=async e=>{
     playing=true;updatePlayButton();refreshAll();pushHistory('Добавлена анимация');
     setStatus(`${frames.length} кадров загружено @ ${fps} FPS — предпросмотр запущен`,'ok');
   }catch(err){
-    console.error(err);e.target.value='';setStatus('Ошибка GIF: '+err.message,'warn');alert('Не удалось импортировать анимацию: '+err.message);
+    console.error(err);e.target.value='';setStatus('Ошибка GIF: '+err.message,'warn');localizedAlert('Не удалось импортировать анимацию: '+err.message);
   }
 };
 $('#addTime').onclick=()=>addLayer({id:uid(),type:'time',name:'HH:MM',x:6,y:70,w:234,h:72,visible:true,digitW:60,digitH:72,gap:-7,fontSize:68,color:'#d5d7db',font:'Inter',outlineEnabled:false,outlineColor:'#202226',outlineWidth:1,blinkColon:false,blinkPeriod:500});
@@ -2268,7 +2280,7 @@ $('#addAnalog').onclick=()=>addLayer({
   showSecond:true,secondLength:116,secondTail:18,secondWidth:2,secondColor:'#e25a5f',
   capRadius:5,capColor:'#d5d7db'
 });
-function addLayer(l){if(!modeAllows(l.type)){alert('Этот слой недоступен в AOD.');return}activeLayers().push(l);selected=l.id;refreshAll();pushHistory('Добавлен '+l.name)}
+function addLayer(l){if(!modeAllows(l.type)){localizedAlert('Этот слой недоступен в AOD.');return}activeLayers().push(l);selected=l.id;refreshAll();pushHistory('Добавлен '+l.name)}
 $('#addText').onclick=()=>addLayer({id:uid(),type:'text',name:'Текст',x:20,y:180,w:216,h:30,visible:true,text:'Текст',fontSize:22,color:'#d5d7db',bold:false,align:'center',font:'Inter',outlineEnabled:false,outlineColor:'#202226',outlineWidth:1});
 $('#addDate').onclick=()=>addLayer({id:uid(),type:'date',name:'Дата',x:36,y:16,w:184,h:30,visible:true,fontSize:20,color:'#d5d7db',outlineEnabled:false,outlineColor:'#202226',outlineWidth:1});
 $('#addSteps').onclick=()=>addLayer({id:uid(),type:'metric',name:'Шаги',seq:29,x:10,y:326,w:76,h:62,visible:true,label:'ШАГИ',sample:'1262',fontSize:27,labelSize:10,valueColor:'#d5d7db',labelColor:'#aeb2ba',outlineEnabled:false,outlineColor:'#202226',outlineWidth:1});
@@ -2283,7 +2295,7 @@ $('#play').onclick=()=>{
   if(!playing)for(const l of project.layers||[])if(l.type==='time'){l._colonOn=true;l._colonAcc=0}
   updatePlayButton();render()
 };
-$('#newBtn').onclick=()=>{if(confirm('Создать новый проект?'))newProject()};
+$('#newBtn').onclick=()=>{if(localizedConfirm('Создать новый проект?'))newProject()};
 
 const faceIdInput=$('#faceId');
 if(faceIdInput){
@@ -2478,7 +2490,7 @@ $('#openProject').onchange=async e=>{
     playing=(project.layers||[]).some(l=>l.type==='animation'&&l.frames&&l.frames.length);
     updatePlayButton();refreshAll();resetHistory('Проект загружен');
     setStatus('Проект загружен','ok');
-  }catch(err){alert('Ошибка проекта: '+err.message)}
+  }catch(err){localizedAlert('Ошибка проекта: '+err.message)}
   e.target.value=''
 };
 
@@ -2802,13 +2814,13 @@ $('#exportBin').onclick=async()=>{
     if(!(Number.isInteger(project.faceId)&&project.faceId>=200&&project.faceId<=250)){
       setStatus('Укажите ID от 200 до 250','warn');
       $('#faceId').focus();
-      alert('Перед сборкой укажите свободный ID циферблата от 200 до 250.');
+      localizedAlert('Перед сборкой укажите свободный ID циферблата от 200 до 250.');
       return;
     }
 
     let displayName=(project.projectName||'').trim();
     if(!displayName){
-      displayName=prompt('Введите название циферблата перед сборкой BIN:','')||'';
+      displayName=localizedPrompt('Введите название циферблата перед сборкой BIN:','')||'';
       displayName=displayName.trim();
       if(!displayName){
         setStatus('Нужно указать имя циферблата','warn');
@@ -2826,7 +2838,7 @@ $('#exportBin').onclick=async()=>{
     dl(new Blob([b],{type:'application/octet-stream'}),name);
     setStatus(`Готово: ${displayName} · ${(b.length/1048576).toFixed(2)} MiB`,'ok');
   }catch(e){
-    console.error(e);setStatus('Ошибка: '+e.message,'warn');alert(e.message);
+    console.error(e);setStatus('Ошибка: '+e.message,'warn');localizedAlert(e.message);
   }
 };
 
