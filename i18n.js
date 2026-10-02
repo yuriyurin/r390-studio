@@ -1,6 +1,7 @@
 /* Interface translations never modify project data or watch-face text. */
 const R390_I18N = (() => {
   const entries = {
+    'Размер меняется на холсте за 8 маркеров. Shift сохраняет пропорции.':'Resize using the eight canvas handles. Shift preserves the aspect ratio.',
     'Свой PNG':'Custom PNG', 'Показать проценты':'Show percentage', 'Высота иконки':'Icon height',
     'Пустой PNG':'Empty PNG', 'Полный PNG':'Full PNG', 'Иконка PNG':'PNG icon',
     'Заменить PNG':'Replace PNG', 'Загрузить PNG':'Upload PNG', 'Удалить PNG':'Remove PNG',

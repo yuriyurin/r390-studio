@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>R390 Studio v0.6.11</title>
+<title>R390 Studio v0.6.12</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Lato:wght@400;700&family=Merriweather:wght@400;700&family=Montserrat:wght@400;700&family=Open+Sans:wght@400;700&family=Oswald:wght@400;700&family=Playfair+Display:wght@400;700&family=Roboto:wght@400;700&family=Roboto+Mono:wght@400;700&family=Ubuntu:wght@400;700&display=swap');
 :root{
@@ -1265,6 +1265,7 @@ html[lang=en] .sidebar .row>label{flex:0 0 84px;width:84px}
 html[lang=en] .props .row>label{overflow-wrap:break-word}
 /* Samsung case geometry shared with the companion app. */
 .canvas-wrap{width:384px;height:auto;aspect-ratio:328 / 472}
+.workspace{scrollbar-gutter:stable}
 .canvas-wrap #screenClip{left:11.585366%;top:7.203390%;width:73.780488%;height:80.084746%;mask:none;-webkit-mask:none;border-radius:12.4% / 7.94%;overflow:hidden;background:#000}
 .canvas-wrap #screen{width:100%;height:100%}
 .canvas-wrap #fit3OfficialBezel{left:0;top:0;width:100%;height:100%;pointer-events:none}
@@ -1288,7 +1289,7 @@ body.mobile-ui .preview-card .fit3-preview-shell .fit3-case{width:100%;height:10
   <div class="language-switch" role="group" aria-label="Язык интерфейса">
     <button type="button" data-language="ru" aria-pressed="true">RU</button><button type="button" data-language="en" aria-pressed="false">EU</button>
   </div>
-  <div class="brand">R390 Studio <span class="badge">v0.6.11</span></div>
+  <div class="brand">R390 Studio <span class="badge">v0.6.12</span></div>
   <button id="quickStartBtn" class="help-accent">✦ Как начать</button>
   <button id="undoBtn" title="Отменить (Ctrl+Z)" disabled>↶</button>
   <button id="redoBtn" title="Повторить (Ctrl+Shift+Z / Ctrl+Y)" disabled>↷</button>
@@ -1358,11 +1359,11 @@ body.mobile-ui .preview-card .fit3-preview-shell .fit3-case{width:100%;height:10
       <button id="canvasEdit" type="button" aria-pressed="false">Правка</button>
     </div>
   </div>
-  <div id="aodNotice" class="aod-note" style="display:none">AOD: без GIF и фитнес-метрик. Время, дата, батарея, текст и статические изображения поддерживаются.</div>
   <div class="canvas-wrap">
     <div id="screenClip"><canvas id="screen" width="256" height="402"></canvas></div>
     <canvas id="fit3OfficialBezel" class="fit3-case" width="328" height="472" aria-hidden="true"></canvas>
   </div>
+  <div id="aodNotice" class="aod-note" style="display:none;margin-top:9px">AOD: без GIF и фитнес-метрик. Время, дата, батарея, текст и статические изображения поддерживаются.</div>
   <div id="timeline" class="timeline"></div>
 </main>
 
@@ -1421,7 +1422,7 @@ let project=null, selected=null, playing=false, drag=null, lastT=performance.now
 let lastTimelineUpdate=0;
 
 const HISTORY_MAX=40;
-let history=[],historyIndex=-1,historyTimer=null,historyRestoring=false;
+let history=[],historyIndex=-1,historyTimer=null,historyRestoring=false,historyPendingLabel='Изменение';
 function cleanLayerForHistory(l){
   const o={};
   for(const [k,v] of Object.entries(l)){
@@ -1440,10 +1441,11 @@ function cloneProjectForHistory(p){
 }
 function updateHistoryButtons(){
   const u=$('#undoBtn'),r=$('#redoBtn');
-  if(u)u.disabled=historyIndex<=0;
+  if(u)u.disabled=historyIndex<=0&&!historyTimer;
   if(r)r.disabled=historyIndex<0||historyIndex>=history.length-1;
 }
 function pushHistory(label='Изменение'){
+  clearTimeout(historyTimer);historyTimer=null;
   if(historyRestoring||!project)return;
   if(historyIndex<history.length-1)history.splice(historyIndex+1);
   history.push({project:cloneProjectForHistory(project),selected,editMode,label});
@@ -1452,9 +1454,13 @@ function pushHistory(label='Изменение'){
   updateHistoryButtons();
 }
 function scheduleHistory(label='Изменение'){
+  if(historyRestoring)return;
   clearTimeout(historyTimer);
+  historyPendingLabel=label;
   historyTimer=setTimeout(()=>pushHistory(label),280);
+  updateHistoryButtons();
 }
+function flushHistory(){if(historyTimer)pushHistory(historyPendingLabel)}
 async function restoreHistory(index){
   if(index<0||index>=history.length)return;
   historyRestoring=true;historyIndex=index;
@@ -1463,8 +1469,8 @@ async function restoreHistory(index){
   await hydrateProject(project);syncProjectInputs();updateModeUI();refreshAll();
   historyRestoring=false;updateHistoryButtons();setStatus(st.label||'История','ok');
 }
-async function undo(){if(historyIndex>0)await restoreHistory(historyIndex-1)}
-async function redo(){if(historyIndex<history.length-1)await restoreHistory(historyIndex+1)}
+async function undo(){if(historyRestoring)return;flushHistory();if(historyIndex>0)await restoreHistory(historyIndex-1)}
+async function redo(){if(historyRestoring)return;flushHistory();if(historyIndex<history.length-1)await restoreHistory(historyIndex+1)}
 function resetHistory(label='Создание проекта'){
   history=[];historyIndex=-1;pushHistory(label);updateHistoryButtons();
 }
@@ -1817,7 +1823,7 @@ function refreshProps(){
   h+=numRow('X','x',l,-512,512)+numRow('Y','y',l,-804,804)+numRow('Ширина','w',l,1,512)+numRow('Высота','h',l,1,804);
   h+=`<div class="row"><label>Видимый</label><input data-k="visible" type="checkbox" ${l.visible!==false?'checked':''}></div>`;
   if(canResize(l)){
-    h+=`<div class="small">Размер меняется на холсте за 8 маркеров. Shift + угол сохраняет пропорции.</div>`;
+    h+=`<div class="small">Размер меняется на холсте за 8 маркеров. Shift сохраняет пропорции.</div>`;
   }
   if(l.type==='animation'){
     h+=numRow('FPS','fps',l,1,60,1);
@@ -1999,12 +2005,18 @@ function applyResize(l,d,x,y,keepAspect){
     if(handle.includes('n'))top=bottom-minSize; else bottom=top+minSize;
   }
 
-  if(keepAspect && handle.length===2){
+  if(keepAspect){
     const aspect=o.w/o.h;
     let w=right-left,h=bottom-top;
-    if(w/h>aspect)w=h*aspect; else h=w/aspect;
+    const horizontal=handle.includes('w')||handle.includes('e');
+    const vertical=handle.includes('n')||handle.includes('s');
+    if(horizontal&&(!vertical||Math.abs(w/o.w-1)>=Math.abs(h/o.h-1)))h=w/aspect;
+    else w=h*aspect;
+    const scale=Math.max(1,minSize/w,minSize/h);w*=scale;h*=scale;
     if(handle.includes('w'))left=right-w; else right=left+w;
     if(handle.includes('n'))top=bottom-h; else bottom=top+h;
+    if(!horizontal){left=o.x+(o.w-w)/2;right=left+w}
+    if(!vertical){top=o.y+(o.h-h)/2;bottom=top+h}
   }
 
   l.x=Math.round(left);l.y=Math.round(top);
@@ -2029,6 +2041,7 @@ function applyResize(l,d,x,y,keepAspect){
   }else if(l.type==='metric'){
     if(o.fontSize!=null)l.fontSize=Math.max(8,Math.round(o.fontSize*sy));
     if(o.labelSize!=null)l.labelSize=Math.max(6,Math.round(o.labelSize*sy));
+    if(o.textureHeight!=null)l.textureHeight=Math.max(8,Math.round(o.textureHeight*sy));
   }else if(l.type==='battery'){
     if(o.fontSize!=null)l.fontSize=Math.max(8,Math.round(o.fontSize*sy));
   }
@@ -2421,7 +2434,7 @@ screen.addEventListener('pointerdown',e=>{
   if(rh){
     drag={mode:'resize',handle:rh.id,cursor:rh.cursor,orig:{
       x:cur.x,y:cur.y,w:cur.w,h:cur.h,
-      fontSize:cur.fontSize,digitW:cur.digitW,digitH:cur.digitH,gap:cur.gap,labelSize:cur.labelSize,
+      fontSize:cur.fontSize,digitW:cur.digitW,digitH:cur.digitH,gap:cur.gap,labelSize:cur.labelSize,textureHeight:cur.textureHeight,
       hourLength:cur.hourLength,minuteLength:cur.minuteLength,secondLength:cur.secondLength,
       hourWidth:cur.hourWidth,minuteWidth:cur.minuteWidth,secondWidth:cur.secondWidth,secondTail:cur.secondTail
     },startX:p.x,startY:p.y};
